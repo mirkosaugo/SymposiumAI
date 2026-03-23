@@ -1,0 +1,1 @@
+- [feedback_blur_ui.md](feedback_blur_ui.md) — All app UI overlays must use backdrop-blur glassmorphism; canvas nodes are exempt
