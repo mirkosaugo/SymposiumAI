@@ -10,24 +10,131 @@ function useIsMounted() {
   return useSyncExternalStore(noop, getTrue, getFalse);
 }
 
-const orbs = [
-  // Top — full width waves sliding horizontally
-  { color: "#A78BFA", w: "100%", h: "32px", x: "0", y: "0", anim: "ambient-wave-h", dur: 6, delay: 0 },
-  { color: "#38BDF8", w: "100%", h: "32px", x: "0", y: "0", anim: "ambient-wave-h", dur: 8, delay: -2 },
-  { color: "#34D399", w: "100%", h: "32px", x: "0", y: "0", anim: "ambient-wave-h", dur: 10, delay: -5 },
-  // Bottom — full width waves sliding horizontally reversed
-  { color: "#FF6B9D", w: "100%", h: "32px", x: "0", y: "auto", anim: "ambient-wave-h-rev", dur: 7, delay: -1, bottom: "0" },
-  { color: "#A78BFA", w: "100%", h: "32px", x: "0", y: "auto", anim: "ambient-wave-h-rev", dur: 9, delay: -4, bottom: "0" },
-  { color: "#38BDF8", w: "100%", h: "32px", x: "0", y: "auto", anim: "ambient-wave-h-rev", dur: 11, delay: -6, bottom: "0" },
-  // Left — full height waves sliding vertically
-  { color: "#34D399", w: "32px", h: "100%", x: "0", y: "0", anim: "ambient-wave-v", dur: 7, delay: -1 },
-  { color: "#FF6B9D", w: "32px", h: "100%", x: "0", y: "0", anim: "ambient-wave-v", dur: 9, delay: -3 },
-  { color: "#A78BFA", w: "32px", h: "100%", x: "0", y: "0", anim: "ambient-wave-v", dur: 11, delay: -7 },
-  // Right — full height waves sliding vertically reversed
-  { color: "#38BDF8", w: "32px", h: "100%", x: "auto", y: "0", anim: "ambient-wave-v-rev", dur: 8, delay: -2, right: "0" },
-  { color: "#34D399", w: "32px", h: "100%", x: "auto", y: "0", anim: "ambient-wave-v-rev", dur: 10, delay: -5, right: "0" },
-  { color: "#FF6B9D", w: "32px", h: "100%", x: "auto", y: "0", anim: "ambient-wave-v-rev", dur: 6, delay: -1, right: "0" },
+const waves = [
+  // Top edge
+  { color: "#A78BFA", edge: "top" as const, dur: 6, delay: 0 },
+  { color: "#38BDF8", edge: "top" as const, dur: 8, delay: -2 },
+  { color: "#34D399", edge: "top" as const, dur: 10, delay: -5 },
+  // Bottom edge
+  { color: "#FF6B9D", edge: "bottom" as const, dur: 7, delay: -1 },
+  { color: "#A78BFA", edge: "bottom" as const, dur: 9, delay: -4 },
+  { color: "#38BDF8", edge: "bottom" as const, dur: 11, delay: -6 },
+  // Left edge
+  { color: "#34D399", edge: "left" as const, dur: 7, delay: -1.5 },
+  { color: "#FF6B9D", edge: "left" as const, dur: 9, delay: -3 },
+  { color: "#A78BFA", edge: "left" as const, dur: 11, delay: -7 },
+  // Right edge
+  { color: "#38BDF8", edge: "right" as const, dur: 8, delay: -2 },
+  { color: "#34D399", edge: "right" as const, dur: 10, delay: -5 },
+  { color: "#FF6B9D", edge: "right" as const, dur: 6, delay: -1 },
 ];
+
+function WaveSvg({
+  index,
+  edge,
+  color,
+  dur,
+  delay,
+  active,
+}: {
+  index: number;
+  edge: "top" | "bottom" | "left" | "right";
+  color: string;
+  dur: number;
+  delay: number;
+  active: boolean;
+}) {
+  const isHorizontal = edge === "top" || edge === "bottom";
+  const gradId = `wave-grad-${index}`;
+
+  const pos: React.CSSProperties = {
+    position: "absolute",
+    filter: "blur(24px)",
+    ...(edge === "top" && { top: -4, left: 0, width: "100%", height: 40 }),
+    ...(edge === "bottom" && {
+      bottom: -4,
+      left: 0,
+      width: "100%",
+      height: 40,
+    }),
+    ...(edge === "left" && { top: 0, left: -4, width: 40, height: "100%" }),
+    ...(edge === "right" && { top: 0, right: -4, width: 40, height: "100%" }),
+  };
+
+  const animStyle: React.CSSProperties = {
+    animationName: active
+      ? isHorizontal
+        ? "ambient-morph-h"
+        : "ambient-morph-v"
+      : "none",
+    animationDuration: `${dur}s`,
+    animationTimingFunction: "ease-in-out",
+    animationIterationCount: "infinite",
+    animationDelay: `${delay}s`,
+  };
+
+  if (isHorizontal) {
+    // Gradient: edge → transparent (top: top-to-bottom, bottom: bottom-to-top)
+    const gradDir =
+      edge === "top"
+        ? { x1: "0", y1: "0", x2: "0", y2: "1" }
+        : { x1: "0", y1: "1", x2: "0", y2: "0" };
+
+    return (
+      <svg
+        style={pos}
+        viewBox="0 0 1440 32"
+        preserveAspectRatio="none"
+        fill="none"
+      >
+        <defs>
+          <linearGradient id={gradId} {...gradDir}>
+            <stop offset="0%" stopColor={color} stopOpacity="0.42" />
+            <stop offset="100%" stopColor={color} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <path
+          d="M0,16 C120,4 240,28 360,16 C480,4 600,28 720,16 C840,4 960,28 1080,16 C1200,4 1320,28 1440,16 L1440,0 L0,0 Z"
+          fill={`url(#${gradId})`}
+          transform={
+            edge === "bottom" ? "scale(1,-1) translate(0,-32)" : undefined
+          }
+          style={animStyle}
+        />
+      </svg>
+    );
+  }
+
+  // Vertical
+  const gradDir =
+    edge === "left"
+      ? { x1: "0", y1: "0", x2: "1", y2: "0" }
+      : { x1: "1", y1: "0", x2: "0", y2: "0" };
+
+  return (
+    <svg
+      style={pos}
+      viewBox="0 0 32 900"
+      preserveAspectRatio="none"
+      fill="none"
+    >
+      <defs>
+        <linearGradient id={gradId} {...gradDir}>
+          <stop offset="0%" stopColor={color} stopOpacity="0.42" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path
+        d="M16,0 C4,75 28,150 16,225 C4,300 28,375 16,450 C4,525 28,600 16,675 C4,750 28,825 16,900 L0,900 L0,0 Z"
+        fill={`url(#${gradId})`}
+        transform={
+          edge === "right" ? "scale(-1,1) translate(-32,0)" : undefined
+        }
+        style={animStyle}
+      />
+    </svg>
+  );
+}
 
 interface AmbientGlowProps {
   active: boolean;
@@ -43,30 +150,19 @@ function AmbientGlowComponent({ active }: AmbientGlowProps) {
       className="pointer-events-none fixed inset-0 transition-opacity duration-1000"
       style={{ opacity: active ? 1 : 0, zIndex: 9998 }}
     >
-      {orbs.map((orb, i) => (
-        <div
+      {waves.map((w, i) => (
+        <WaveSvg
           key={i}
-          style={{
-            position: "absolute",
-            left: "right" in orb ? "auto" : orb.x,
-            top: "bottom" in orb ? "auto" : orb.y,
-            right: "right" in orb ? (orb as { right: string }).right : undefined,
-            bottom: "bottom" in orb ? (orb as { bottom: string }).bottom : undefined,
-            width: orb.w,
-            height: orb.h,
-            opacity: 0.8,
-            background: `radial-gradient(ellipse, ${orb.color} 0%, ${orb.color}80 40%, transparent 70%)`,
-            filter: "blur(50px)",
-            animationName: active ? orb.anim : "none",
-            animationDuration: `${orb.dur}s`,
-            animationTimingFunction: "ease-in-out",
-            animationIterationCount: "infinite",
-            animationDelay: `${orb.delay}s`,
-          }}
+          index={i}
+          edge={w.edge}
+          color={w.color}
+          dur={w.dur}
+          delay={w.delay}
+          active={active}
         />
       ))}
     </div>,
-    document.body
+    document.body,
   );
 }
 
