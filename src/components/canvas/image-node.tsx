@@ -1,27 +1,33 @@
 "use client";
 
 import { memo, useState, useCallback, useRef } from "react";
-import { Handle, Position, type NodeProps, useReactFlow } from "@xyflow/react";
+import { type NodeProps } from "@xyflow/react";
 import { ImagePlus, X } from "lucide-react";
 import type { ImageUploadData } from "@/types/canvas";
+import { useNodeData } from "@/hooks/use-node-data";
+import { useConnectMode } from "@/hooks/use-connect-mode";
+import { getCardStyle, getConnectHoverShadow } from "@/lib/node-style";
+import { NodeHandles } from "./node-handles";
+import { NodeActions } from "./node-actions";
+import { NodeHeader } from "./node-header";
+import { EditableField } from "./editable-field";
 
 function ImageNodeComponent({ id, data, selected }: NodeProps) {
-  const nodeData = data as unknown as ImageUploadData;
+  const [nodeData, update] = useNodeData<ImageUploadData>(id, data);
+  const { hoveringNode } = useConnectMode();
+  const isConnectHover = hoveringNode === id;
   const [dragging, setDragging] = useState(false);
   const [editingCaption, setEditingCaption] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
-  const { updateNodeData } = useReactFlow();
 
   const handleFile = useCallback(
     (file: File) => {
       if (!file.type.startsWith("image/")) return;
       const reader = new FileReader();
-      reader.onload = (e) => {
-        updateNodeData(id, { src: e.target?.result as string });
-      };
+      reader.onload = (e) => update({ src: e.target?.result as string });
       reader.readAsDataURL(file);
     },
-    [id, updateNodeData]
+    [update]
   );
 
   const handleDrop = useCallback(
@@ -34,50 +40,27 @@ function ImageNodeComponent({ id, data, selected }: NodeProps) {
     [handleFile]
   );
 
-  const clearImage = useCallback(() => {
-    updateNodeData(id, { src: null });
-  }, [id, updateNodeData]);
-
   return (
     <div
       className="group relative w-64 rounded-2xl overflow-hidden shadow-lg transition-shadow bg-[var(--node-bg)]"
       style={{
-        borderWidth: 1,
-        borderTopColor: selected ? nodeData.color : "var(--node-border)",
-        borderRightColor: selected ? nodeData.color : "var(--node-border)",
-        borderBottomColor: selected ? nodeData.color : "var(--node-border)",
-        borderLeftWidth: 4,
-        borderLeftColor: nodeData.color,
-        borderRadius: "4px 16px 16px 4px",
-        boxShadow: selected ? `0 0 8px ${nodeData.color}15` : undefined,
+        ...getCardStyle(nodeData.color, selected),
+        ...(isConnectHover ? getConnectHoverShadow(nodeData.color) : {}),
       }}
     >
-      <Handle type="target" position={Position.Top} className="!w-3 !h-3 !bg-neutral-500 !border-2 !border-neutral-700" />
-      <Handle type="source" position={Position.Bottom} className="!w-3 !h-3 !bg-neutral-500 !border-2 !border-neutral-700" />
-      <Handle type="target" position={Position.Left} className="!w-3 !h-3 !bg-neutral-500 !border-2 !border-neutral-700" style={{ left: -2 }} />
-      <Handle type="source" position={Position.Right} className="!w-3 !h-3 !bg-neutral-500 !border-2 !border-neutral-700" />
+      <NodeHandles />
+      <NodeActions nodeId={id} onEdit={() => setEditingCaption(true)} />
 
-      {/* Header */}
-      <div
-        className="flex items-center gap-2 px-4 py-3"
-        style={{ background: `${nodeData.color}15` }}
-      >
-        <div
-          className="flex h-8 w-8 items-center justify-center rounded-xl"
-          style={{ background: `${nodeData.color}25` }}
-        >
-          <ImagePlus className="h-4 w-4" style={{ color: nodeData.color }} />
-        </div>
-        <h3 className="flex-1 text-sm font-semibold text-foreground">Image</h3>
+      <NodeHeader icon={ImagePlus} label="Image" color={nodeData.color}>
         {nodeData.src && (
           <button
-            onClick={clearImage}
+            onClick={() => update({ src: null })}
             className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground"
           >
             <X className="h-3.5 w-3.5" />
           </button>
         )}
-      </div>
+      </NodeHeader>
 
       {/* Image area */}
       {nodeData.src ? (
@@ -101,44 +84,27 @@ function ImageNodeComponent({ id, data, selected }: NodeProps) {
           onClick={() => fileRef.current?.click()}
         >
           <ImagePlus className="h-8 w-8 text-muted-foreground/40 mb-2" />
-          <span className="text-[10px] text-muted-foreground/60">
-            Drop or click to upload
-          </span>
+          <span className="text-[10px] text-muted-foreground/60">Drop or click to upload</span>
           <input
             ref={fileRef}
             type="file"
             accept="image/*"
             className="hidden"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) handleFile(file);
-            }}
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
           />
         </div>
       )}
 
       {/* Caption */}
       <div className="px-4 pb-3">
-        {editingCaption ? (
-          <input
-            autoFocus
-            defaultValue={nodeData.caption}
-            onBlur={(e) => {
-              setEditingCaption(false);
-              updateNodeData(id, { caption: e.target.value });
-            }}
-            onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
-            className="w-full bg-transparent text-xs text-muted-foreground outline-none"
-            placeholder="Add caption..."
-          />
-        ) : (
-          <p
-            className="text-xs text-muted-foreground cursor-text min-h-4"
-            onDoubleClick={() => setEditingCaption(true)}
-          >
-            {nodeData.caption || "Double click for caption..."}
-          </p>
-        )}
+        <EditableField
+          value={nodeData.caption}
+          placeholder="Double click for caption..."
+          onSave={(caption) => update({ caption })}
+          editing={editingCaption}
+          onEditEnd={() => setEditingCaption(false)}
+          className="text-xs text-muted-foreground min-h-4"
+        />
       </div>
     </div>
   );

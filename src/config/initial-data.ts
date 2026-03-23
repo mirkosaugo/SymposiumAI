@@ -5,7 +5,7 @@ export const initialNodes: CanvasNode[] = [
   {
     id: "t1",
     type: "text",
-    position: { x: 80, y: 80 },
+    position: { x: 520, y: 20 },
     data: {
       text: "Explore the concept of digital metamorphosis: how bodies transform through filters, generative AI, and augmented reality. What remains of the original identity?",
       color: "#64748b",
@@ -14,7 +14,7 @@ export const initialNodes: CanvasNode[] = [
   {
     id: "t2",
     type: "text",
-    position: { x: 80, y: 320 },
+    position: { x: 280, y: 100 },
     data: {
       text: "Color palette: cool tones (cyan, lavender) blending with organic red. Contrast between artificial and natural.",
       color: "#64748b",
@@ -25,7 +25,7 @@ export const initialNodes: CanvasNode[] = [
   {
     id: "c1",
     type: "conceptCard",
-    position: { x: 450, y: 60 },
+    position: { x: 880, y: 40 },
     data: {
       title: "Fluid Identity",
       description: "Portrait series where the subject's face dissolves and recomposes through generative patterns. Each iteration produces a different version of identity.",
@@ -36,7 +36,7 @@ export const initialNodes: CanvasNode[] = [
   {
     id: "c2",
     type: "conceptCard",
-    position: { x: 450, y: 340 },
+    position: { x: 880, y: 270 },
     data: {
       title: "Synthetic Memory",
       description: "Installation using personal archive photos reworked by AI to create memories that never existed but feel authentic.",
@@ -47,7 +47,7 @@ export const initialNodes: CanvasNode[] = [
   {
     id: "c3",
     type: "conceptCard",
-    position: { x: 820, y: 200 },
+    position: { x: 1200, y: 150 },
     data: {
       title: "Body-Interface",
       description: "Performance where the body becomes a projection surface for real-time AI output, reacting to the performer's movements.",
@@ -60,7 +60,7 @@ export const initialNodes: CanvasNode[] = [
   {
     id: "i1",
     type: "imageUpload",
-    position: { x: 80, y: 530 },
+    position: { x: 0, y: 180 },
     data: {
       src: null,
       caption: "Reference: organic textures",
@@ -70,7 +70,7 @@ export const initialNodes: CanvasNode[] = [
   {
     id: "i2",
     type: "imageUpload",
-    position: { x: 350, y: 590 },
+    position: { x: 820, y: 500 },
     data: {
       src: null,
       caption: "Color palette moodboard",
@@ -82,7 +82,7 @@ export const initialNodes: CanvasNode[] = [
   {
     id: "r1",
     type: "run",
-    position: { x: 820, y: 500 },
+    position: { x: 1200, y: 420 },
     data: {
       label: "Synthesize Art Concept",
       status: "idle",
@@ -93,11 +93,11 @@ export const initialNodes: CanvasNode[] = [
 ];
 
 export const initialEdges: CanvasEdge[] = [
-  { id: "e-t1-c1", source: "t1", target: "c1", animated: true, style: { stroke: "#A78BFA80", strokeWidth: 2 } },
-  { id: "e-t2-c2", source: "t2", target: "c2", animated: true, style: { stroke: "#FF6B9D80", strokeWidth: 2 } },
-  { id: "e-c1-c3", source: "c1", target: "c3", animated: true, style: { stroke: "#34D39980", strokeWidth: 2 } },
-  { id: "e-c2-c3", source: "c2", target: "c3", animated: true, style: { stroke: "#34D39980", strokeWidth: 2 } },
-  { id: "e-c3-r1", source: "c3", target: "r1", animated: true, style: { stroke: "#34D39980", strokeWidth: 2 } },
-  { id: "e-i1-c2", source: "i1", target: "c2", style: { stroke: "#38BDF880", strokeWidth: 2, strokeDasharray: "5 5" } },
-  { id: "e-i2-r1", source: "i2", target: "r1", style: { stroke: "#38BDF880", strokeWidth: 2, strokeDasharray: "5 5" } },
+  { id: "e-t1-c1", type: "custom", source: "t1", target: "c1", animated: true, style: { stroke: "#A78BFA80", strokeWidth: 2 } },
+  { id: "e-t2-c2", type: "custom", source: "t2", target: "c2", animated: true, style: { stroke: "#FF6B9D80", strokeWidth: 2 } },
+  { id: "e-c1-c3", type: "custom", source: "c1", target: "c3", animated: true, style: { stroke: "#34D39980", strokeWidth: 2 } },
+  { id: "e-c2-c3", type: "custom", source: "c2", target: "c3", animated: true, style: { stroke: "#34D39980", strokeWidth: 2 } },
+  { id: "e-c3-r1", type: "custom", source: "c3", target: "r1", animated: true, style: { stroke: "#34D39980", strokeWidth: 2 } },
+  { id: "e-i1-c2", type: "custom", source: "i1", target: "c2", style: { stroke: "#38BDF880", strokeWidth: 2, strokeDasharray: "5 5" } },
+  { id: "e-i2-r1", type: "custom", source: "i2", target: "r1", style: { stroke: "#38BDF880", strokeWidth: 2, strokeDasharray: "5 5" } },
 ];

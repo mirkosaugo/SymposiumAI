@@ -1,109 +1,75 @@
 "use client";
 
 import { memo, useState, useCallback } from "react";
-import { Handle, Position, type NodeProps, useReactFlow } from "@xyflow/react";
+import { type NodeProps } from "@xyflow/react";
 import { Lightbulb, X, Plus } from "lucide-react";
 import type { ConceptCardData } from "@/types/canvas";
+import { useNodeData } from "@/hooks/use-node-data";
+import { useConnectMode } from "@/hooks/use-connect-mode";
+import { getCardStyle, getConnectHoverShadow } from "@/lib/node-style";
+import { NodeHandles } from "./node-handles";
+import { NodeActions } from "./node-actions";
+import { NodeHeader } from "./node-header";
+import { EditableField } from "./editable-field";
 
 function ConceptCardNodeComponent({ id, data, selected }: NodeProps) {
-  const nodeData = data as unknown as ConceptCardData;
+  const [nodeData, update] = useNodeData<ConceptCardData>(id, data);
   const [editingField, setEditingField] = useState<string | null>(null);
   const [tagInput, setTagInput] = useState("");
-  const { updateNodeData } = useReactFlow();
-
-  const handleFieldBlur = useCallback(
-    (field: string, value: string) => {
-      setEditingField(null);
-      updateNodeData(id, { [field]: value });
-    },
-    [id, updateNodeData]
-  );
+  const { hoveringNode } = useConnectMode();
+  const isConnectHover = hoveringNode === id;
 
   const addTag = useCallback(() => {
     const tag = tagInput.trim();
     if (tag && !nodeData.tags.includes(tag)) {
-      updateNodeData(id, { tags: [...nodeData.tags, tag] });
+      update({ tags: [...nodeData.tags, tag] });
     }
     setTagInput("");
-  }, [id, tagInput, nodeData.tags, updateNodeData]);
+  }, [tagInput, nodeData.tags, update]);
 
   const removeTag = useCallback(
-    (tag: string) => {
-      updateNodeData(id, { tags: nodeData.tags.filter((t: string) => t !== tag) });
-    },
-    [id, nodeData.tags, updateNodeData]
+    (tag: string) => update({ tags: nodeData.tags.filter((t: string) => t !== tag) }),
+    [nodeData.tags, update]
   );
 
   return (
     <div
       className="group relative w-64 rounded-2xl overflow-hidden shadow-lg transition-shadow bg-[var(--node-bg)]"
       style={{
-        borderWidth: 1,
-        borderTopColor: selected ? nodeData.color : "var(--node-border)",
-        borderRightColor: selected ? nodeData.color : "var(--node-border)",
-        borderBottomColor: selected ? nodeData.color : "var(--node-border)",
-        borderLeftWidth: 4,
-        borderLeftColor: nodeData.color,
-        borderRadius: "4px 16px 16px 4px",
-        boxShadow: selected ? `0 0 8px ${nodeData.color}15` : undefined,
+        ...getCardStyle(nodeData.color, selected),
+        ...(isConnectHover ? getConnectHoverShadow(nodeData.color) : {}),
       }}
     >
-      <Handle type="target" position={Position.Top} className="!w-3 !h-3 !bg-neutral-500 !border-2 !border-neutral-700" />
-      <Handle type="source" position={Position.Bottom} className="!w-3 !h-3 !bg-neutral-500 !border-2 !border-neutral-700" />
-      <Handle type="target" position={Position.Left} className="!w-3 !h-3 !bg-neutral-500 !border-2 !border-neutral-700" style={{ left: -2 }} />
-      <Handle type="source" position={Position.Right} className="!w-3 !h-3 !bg-neutral-500 !border-2 !border-neutral-700" />
-
-      {/* Header */}
-      <div
-        className="flex items-center gap-2 px-4 py-3"
-        style={{ background: `${nodeData.color}15` }}
-      >
-        <div
-          className="flex h-8 w-8 items-center justify-center rounded-xl"
-          style={{ background: `${nodeData.color}25` }}
-        >
-          <Lightbulb className="h-4 w-4" style={{ color: nodeData.color }} />
-        </div>
-        <h3 className="text-sm font-semibold text-foreground">Concept</h3>
-      </div>
+      <NodeHandles />
+      <NodeActions nodeId={id} onEdit={() => setEditingField("title")} />
+      <NodeHeader icon={Lightbulb} label="Concept" color={nodeData.color} />
 
       {/* Title */}
       <div className="px-4 pt-3 pb-1">
-        {editingField === "title" ? (
-          <input
-            autoFocus
-            defaultValue={nodeData.title}
-            onBlur={(e) => handleFieldBlur("title", e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
-            className="w-full bg-transparent text-sm font-semibold text-foreground outline-none"
-          />
-        ) : (
-          <h3
-            className="text-sm font-semibold text-foreground cursor-text"
-            onDoubleClick={() => setEditingField("title")}
-          >
-            {nodeData.title || "Untitled concept"}
-          </h3>
-        )}
+        <EditableField
+          value={nodeData.title}
+          placeholder="Untitled concept"
+          onSave={(title) => update({ title })}
+          editing={editingField === "title"}
+          onEditStart={() => setEditingField("title")}
+          onEditEnd={() => setEditingField(null)}
+          className="text-sm font-semibold text-foreground"
+        />
       </div>
 
       {/* Description */}
       <div className="px-4 pb-2">
-        {editingField === "description" ? (
-          <textarea
-            autoFocus
-            defaultValue={nodeData.description}
-            onBlur={(e) => handleFieldBlur("description", e.target.value)}
-            className="w-full min-h-10 resize-none bg-transparent text-xs leading-relaxed text-muted-foreground outline-none"
-          />
-        ) : (
-          <p
-            className="text-xs leading-relaxed text-muted-foreground cursor-text min-h-5"
-            onDoubleClick={() => setEditingField("description")}
-          >
-            {nodeData.description || "Double click to add description..."}
-          </p>
-        )}
+        <EditableField
+          value={nodeData.description}
+          placeholder="Double click to add description..."
+          onSave={(description) => update({ description })}
+          editing={editingField === "description"}
+          onEditStart={() => setEditingField("description")}
+          onEditEnd={() => setEditingField(null)}
+          multiline
+          className="text-xs leading-relaxed text-muted-foreground"
+          editClassName="text-xs leading-relaxed text-muted-foreground min-h-10"
+        />
       </div>
 
       {/* Tags */}
