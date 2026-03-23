@@ -361,6 +361,8 @@ function FlowCanvasInner() {
           elementsSelectable={!connectingFrom}
           snapToGrid
           snapGrid={SNAP_GRID}
+          minZoom={0.3}
+          maxZoom={2}
           fitView
           fitViewOptions={{ padding: 0.2, includeHiddenNodes: true }}
           proOptions={{ hideAttribution: true }}

@@ -16,7 +16,7 @@ interface StatusBarProps {
 }
 
 export function StatusBar({ zoom, onZoomIn, onZoomOut, onFitView }: StatusBarProps) {
-  const zoomPercent = Math.round(zoom * 100);
+  const zoomPercent = Math.round(((zoom - 0.3) / 1.7) * 200);
 
   return (
     <div className="absolute bottom-4 right-4 z-40 flex flex-col items-center gap-2">
