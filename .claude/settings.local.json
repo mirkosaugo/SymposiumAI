@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx storybook:*)",
+      "Read(//tmp/**)",
+      "Bash(npm ls:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(npm install:*)",
+      "Read(//private/tmp/**)"
+    ]
+  }
+}

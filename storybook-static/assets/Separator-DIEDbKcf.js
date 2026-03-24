@@ -1,0 +1,1 @@
+import{n as e,o as t}from"./chunk-vNrZSFDR.js";import{t as n}from"./react-KkzZQhs-.js";import{a as r,o as i}from"./utils-BSCHhu3v.js";var a,o,s=e((()=>{a=t(n()),r(),o=a.forwardRef(function(e,t){let{className:n,render:r,orientation:a=`horizontal`,...o}=e;return i(`div`,e,{state:{orientation:a},ref:t,props:[{role:`separator`,"aria-orientation":a},o]})})}));export{s as n,o as t};
