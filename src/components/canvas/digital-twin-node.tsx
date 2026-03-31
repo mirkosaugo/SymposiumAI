@@ -5,9 +5,7 @@ import { type NodeProps } from "@xyflow/react";
 import { Bot } from "lucide-react";
 import type { DigitalTwinData } from "@/types/canvas";
 import { useNodeData } from "@/hooks/use-node-data";
-import { useConnectMode } from "@/hooks/use-connect-mode";
-import { getCardStyle, getConnectHoverShadow } from "@/lib/node-style";
-import { NodeHandles } from "./node-handles";
+import { getCardStyle } from "@/lib/node-style";
 import { NodeActions } from "./node-actions";
 import { NodeHeader } from "./node-header";
 
@@ -20,21 +18,15 @@ const MODES = [
 
 function DigitalTwinNodeComponent({ id, data, selected }: NodeProps) {
   const [nodeData] = useNodeData<DigitalTwinData>(id, data);
-  const { hoveringNode } = useConnectMode();
-  const isConnectHover = hoveringNode === id;
-
   const activeMode = MODES.find((m) => m.id === nodeData.mode) ?? MODES[0];
 
   return (
     <div
       className="group relative w-72 rounded-2xl overflow-hidden shadow-lg transition-shadow bg-[var(--node-bg)]"
-      style={{
-        ...getCardStyle(nodeData.color, selected),
-        ...(isConnectHover ? getConnectHoverShadow(nodeData.color) : {}),
-      }}
+      style={getCardStyle(nodeData.color, selected)}
     >
-      <NodeHandles />
       <NodeActions nodeId={id} />
+      <div className="pointer-events-none">
       <NodeHeader icon={Bot} label="Digital Twin" color={nodeData.color} />
 
       {/* Name */}
@@ -90,6 +82,7 @@ function DigitalTwinNodeComponent({ id, data, selected }: NodeProps) {
             </p>
           )}
         </div>
+      </div>
       </div>
     </div>
   );

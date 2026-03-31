@@ -1,29 +1,32 @@
 import type { CSSProperties } from "react";
 
 /**
- * Returns the inline style for a node with a colored left border.
- * Used by Text, Concept Card, and Image nodes.
+ * Darken a hex color by mixing it toward black.
+ * amount = 0 → original, amount = 1 → black.
  */
-export function getCardStyle(color: string, selected?: boolean): CSSProperties {
+export function darkenColor(hex: string, amount = 0.35): string {
+  const h = hex.replace("#", "");
+  const r = Math.round(parseInt(h.substring(0, 2), 16) * (1 - amount));
+  const g = Math.round(parseInt(h.substring(2, 4), 16) * (1 - amount));
+  const b = Math.round(parseInt(h.substring(4, 6), 16) * (1 - amount));
+  return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
+}
+
+/**
+ * Returns the inline style for a standard card node (no borders).
+ */
+export function getCardStyle(_color: string, selected?: boolean): CSSProperties {
   return {
-    borderWidth: 1,
-    borderTopColor: selected ? color : "var(--node-border)",
-    borderRightColor: selected ? color : "var(--node-border)",
-    borderBottomColor: selected ? color : "var(--node-border)",
-    borderLeftWidth: 4,
-    borderLeftColor: color,
-    borderRadius: "4px 16px 16px 4px",
-    boxShadow: selected ? `0 0 8px ${color}15` : undefined,
+    boxShadow: selected ? "0 0 0 2px var(--foreground)" : undefined,
   };
 }
 
 /**
- * Returns the inline style for the Run node (uniform border, no left accent).
+ * Returns the inline style for the Run node (no borders).
  */
-export function getRunStyle(color: string, selected?: boolean): CSSProperties {
+export function getRunStyle(_color: string, selected?: boolean): CSSProperties {
   return {
-    borderColor: selected ? color : undefined,
-    boxShadow: selected ? `0 0 8px ${color}15` : undefined,
+    boxShadow: selected ? "0 0 0 2px var(--foreground)" : undefined,
   };
 }
 
@@ -32,13 +35,6 @@ export function getRunStyle(color: string, selected?: boolean): CSSProperties {
  */
 export function tintBg(color: string, opacity = "15"): CSSProperties {
   return { background: `${color}${opacity}` };
-}
-
-/**
- * Returns a strong glow box-shadow for connect-mode hover.
- */
-export function getConnectHoverShadow(color: string): CSSProperties {
-  return { boxShadow: `0 0 20px ${color}50, 0 0 40px ${color}25` };
 }
 
 /**

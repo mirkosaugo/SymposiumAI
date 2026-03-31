@@ -9,12 +9,6 @@ export const NODE_COLORS = {
   digitalTwin: "#818CF8",
 } as const;
 
-// Default edge styling
-export const DEFAULT_EDGE_STYLE = {
-  stroke: "var(--edge-stroke)",
-  strokeWidth: 2,
-} as const;
-
 // Canvas
 export const SNAP_GRID: [number, number] = [16, 16];
 

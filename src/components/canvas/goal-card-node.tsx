@@ -5,9 +5,7 @@ import { type NodeProps } from "@xyflow/react";
 import { Target } from "lucide-react";
 import type { GoalCardData } from "@/types/canvas";
 import { useNodeData } from "@/hooks/use-node-data";
-import { useConnectMode } from "@/hooks/use-connect-mode";
-import { getCardStyle, getConnectHoverShadow } from "@/lib/node-style";
-import { NodeHandles } from "./node-handles";
+import { getCardStyle } from "@/lib/node-style";
 import { NodeActions } from "./node-actions";
 import { NodeHeader } from "./node-header";
 
@@ -19,25 +17,18 @@ const PRIORITY_COLORS = {
 
 function GoalCardNodeComponent({ id, data, selected }: NodeProps) {
   const [nodeData] = useNodeData<GoalCardData>(id, data);
-  const { hoveringNode } = useConnectMode();
-  const isConnectHover = hoveringNode === id;
-
   return (
     <div
       className="group relative w-64 rounded-2xl overflow-hidden shadow-lg transition-shadow bg-[var(--node-bg)]"
-      style={{
-        ...getCardStyle(nodeData.color, selected),
-        ...(isConnectHover ? getConnectHoverShadow(nodeData.color) : {}),
-      }}
+      style={getCardStyle(nodeData.color, selected)}
     >
-      <NodeHandles />
       <NodeActions nodeId={id} />
       <NodeHeader icon={Target} label="Goal" color={nodeData.color}>
         <span
           className="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
           style={{
-            background: `${PRIORITY_COLORS[nodeData.priority]}20`,
-            color: PRIORITY_COLORS[nodeData.priority],
+            background: "rgba(0,0,0,0.2)",
+            color: "#fff",
           }}
         >
           {nodeData.priority}

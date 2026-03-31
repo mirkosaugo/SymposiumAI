@@ -21,7 +21,16 @@ import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
 interface PromptBarProps {
-  onAddNode: (type: "text" | "conceptCard" | "imageUpload" | "run" | "goalCard" | "perplexityCard" | "digitalTwin") => void;
+  onAddNode: (
+    type:
+      | "text"
+      | "conceptCard"
+      | "imageUpload"
+      | "run"
+      | "goalCard"
+      | "perplexityCard"
+      | "digitalTwin",
+  ) => void;
   onRunAI: () => void;
   isRunning: boolean;
 }
@@ -56,7 +65,7 @@ export function PromptBar({ onAddNode, onRunAI, isRunning }: PromptBarProps) {
             value={promptText}
             onChange={(e) => setPromptText(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-            placeholder="Write an idea..."
+            placeholder="What do you want to create or achieve?"
             className="flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground/50"
           />
           <button
@@ -91,9 +100,7 @@ export function PromptBar({ onAddNode, onRunAI, isRunning }: PromptBarProps) {
             <TooltipTrigger
               className={cn(
                 "flex h-8 w-8 items-center justify-center rounded-full transition-colors cursor-pointer active:scale-95",
-                isRunning
-                  ? "text-amber-400"
-                  : "text-foreground hover:bg-muted"
+                isRunning ? "text-amber-400" : "text-foreground hover:bg-muted",
               )}
               onClick={onRunAI}
               disabled={isRunning}

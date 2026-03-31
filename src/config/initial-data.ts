@@ -1,4 +1,4 @@
-import type { CanvasNode, CanvasEdge } from "@/types/canvas";
+import type { CanvasNode } from "@/types/canvas";
 
 export const initialNodes: CanvasNode[] = [
   // Text nodes
@@ -92,12 +92,3 @@ export const initialNodes: CanvasNode[] = [
   },
 ];
 
-export const initialEdges: CanvasEdge[] = [
-  { id: "e-t1-c1", type: "custom", source: "t1", target: "c1", animated: true, style: { stroke: "#A78BFA80", strokeWidth: 2 } },
-  { id: "e-t2-c2", type: "custom", source: "t2", target: "c2", animated: true, style: { stroke: "#FF6B9D80", strokeWidth: 2 } },
-  { id: "e-c1-c3", type: "custom", source: "c1", target: "c3", animated: true, style: { stroke: "#34D39980", strokeWidth: 2 } },
-  { id: "e-c2-c3", type: "custom", source: "c2", target: "c3", animated: true, style: { stroke: "#34D39980", strokeWidth: 2 } },
-  { id: "e-c3-r1", type: "custom", source: "c3", target: "r1", animated: true, style: { stroke: "#34D39980", strokeWidth: 2 } },
-  { id: "e-i1-c2", type: "custom", source: "i1", target: "c2", style: { stroke: "#38BDF880", strokeWidth: 2, strokeDasharray: "5 5" } },
-  { id: "e-i2-r1", type: "custom", source: "i2", target: "r1", style: { stroke: "#38BDF880", strokeWidth: 2, strokeDasharray: "5 5" } },
-];

@@ -5,6 +5,8 @@ import {
   MousePointer2,
   Hand,
   LayoutTemplate,
+  Download,
+  Upload,
   Type,
   Lightbulb,
   Target,
@@ -34,6 +36,8 @@ interface CanvasToolbarProps {
   activeTool: ToolMode;
   onToolChange: (tool: ToolMode) => void;
   onLoadTemplate?: (template: FlowTemplate) => void;
+  onExport?: () => void;
+  onImport?: () => void;
   hasContent?: boolean;
 }
 
@@ -60,7 +64,7 @@ function getNodeTypeCounts(template: FlowTemplate) {
   return counts;
 }
 
-export function CanvasToolbar({ activeTool, onToolChange, onLoadTemplate, hasContent }: CanvasToolbarProps) {
+export function CanvasToolbar({ activeTool, onToolChange, onLoadTemplate, onExport, onImport, hasContent }: CanvasToolbarProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [confirming, setConfirming] = useState<FlowTemplate | null>(null);
 
@@ -115,6 +119,28 @@ export function CanvasToolbar({ activeTool, onToolChange, onLoadTemplate, hasCon
               <LayoutTemplate className="h-5 w-5" />
             </TooltipTrigger>
             <TooltipContent side="left">Templates</TooltipContent>
+          </Tooltip>
+
+          <div className="w-5 border-t border-border/30" />
+
+          <Tooltip>
+            <TooltipTrigger
+              className={ICON_BTN_CLASS}
+              onClick={onExport}
+            >
+              <Download className="h-5 w-5" />
+            </TooltipTrigger>
+            <TooltipContent side="left">Export JSON</TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger
+              className={ICON_BTN_CLASS}
+              onClick={onImport}
+            >
+              <Upload className="h-5 w-5" />
+            </TooltipTrigger>
+            <TooltipContent side="left">Import JSON</TooltipContent>
           </Tooltip>
         </div>
       </div>

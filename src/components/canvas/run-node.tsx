@@ -5,11 +5,9 @@ import { type NodeProps } from "@xyflow/react";
 import { Play, Loader2, CheckCircle2, AlertCircle, GitBranch } from "lucide-react";
 import type { RunNodeData, StructuredOutput } from "@/types/canvas";
 import { useNodeData } from "@/hooks/use-node-data";
-import { useConnectMode } from "@/hooks/use-connect-mode";
 import { useChainFlow } from "@/hooks/use-chain-flow";
-import { getRunStyle, getConnectHoverShadow } from "@/lib/node-style";
+import { getRunStyle } from "@/lib/node-style";
 import { cn } from "@/lib/utils";
-import { NodeHandles } from "./node-handles";
 import { NodeActions } from "./node-actions";
 import { NodeHeader } from "./node-header";
 import {
@@ -119,9 +117,7 @@ function StructuredView({ output }: { output: StructuredOutput }) {
 
 function RunNodeComponent({ id, data, selected }: NodeProps) {
   const [nodeData] = useNodeData<RunNodeData>(id, data);
-  const { hoveringNode } = useConnectMode();
   const { chainFromRun } = useChainFlow();
-  const isConnectHover = hoveringNode === id;
   const { icon: StatusIcon, label: statusLabel, iconClass } = statusConfig[nodeData.status];
 
   const hasStructured = nodeData.status === "done" && nodeData.structuredOutput;
@@ -134,17 +130,15 @@ function RunNodeComponent({ id, data, selected }: NodeProps) {
   return (
     <div
       className={cn(
-        "group relative rounded-2xl border shadow-lg overflow-hidden transition-all bg-[var(--node-bg)] border-[var(--node-border)]",
+        "group relative rounded-2xl shadow-lg overflow-hidden transition-all bg-[var(--node-bg)]",
         nodeData.status === "running" && "ring-2 ring-amber-400/30",
         hasStructured ? "w-96" : "w-72"
       )}
       style={{
         ...getRunStyle(nodeData.color, selected),
-        ...(isConnectHover ? getConnectHoverShadow(nodeData.color) : {}),
         ...(hasStructured ? { minHeight: 300 } : {}),
       }}
     >
-      <NodeHandles />
       <NodeActions nodeId={id} hideEdit />
 
       <NodeHeader icon={Play} label={nodeData.label} color={nodeData.color}>
@@ -152,7 +146,7 @@ function RunNodeComponent({ id, data, selected }: NodeProps) {
           {nodeData.status !== "idle" && (
             <>
               <StatusIcon className={cn("h-3 w-3", iconClass)} />
-              <span className="text-[10px] text-muted-foreground">{statusLabel}</span>
+              <span className="text-[10px] text-white/80">{statusLabel}</span>
             </>
           )}
           {canChain && (

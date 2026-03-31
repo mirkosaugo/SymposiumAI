@@ -1,23 +1,11 @@
-import type { CanvasNode, CanvasEdge } from "@/types/canvas";
-import { NODE_COLORS, DEFAULT_EDGE_STYLE } from "./constants";
+import type { CanvasNode } from "@/types/canvas";
+import { NODE_COLORS } from "./constants";
 
 export interface FlowTemplate {
   id: string;
   name: string;
   description: string;
   nodes: CanvasNode[];
-  edges: CanvasEdge[];
-}
-
-function edge(source: string, target: string): CanvasEdge {
-  return {
-    id: `e-${source}-${target}`,
-    type: "custom",
-    source,
-    target,
-    animated: true,
-    style: DEFAULT_EDGE_STYLE,
-  };
 }
 
 // --- Template 1: Product Critique ---
@@ -73,20 +61,6 @@ const productCritiqueNodes: CanvasNode[] = [
   },
 ];
 
-const productCritiqueEdges: CanvasEdge[] = [
-  edge("tpl-goal", "tpl-run"),
-  edge("tpl-c1", "tpl-run"),
-  edge("tpl-c2", "tpl-run"),
-  edge("tpl-c3", "tpl-run"),
-  edge("tpl-twin-critico", "tpl-run"),
-  edge("tpl-twin-innovatore", "tpl-run"),
-  edge("tpl-perp", "tpl-run"),
-  edge("tpl-twin-critico", "tpl-c1"),
-  edge("tpl-twin-critico", "tpl-c2"),
-  edge("tpl-twin-innovatore", "tpl-c2"),
-  edge("tpl-twin-innovatore", "tpl-c3"),
-];
-
 // --- Template 2: Decision Matrix ---
 
 const decisionMatrixNodes: CanvasNode[] = [
@@ -138,20 +112,6 @@ const decisionMatrixNodes: CanvasNode[] = [
     position: { x: 330, y: 580 },
     data: { label: "Run AI", status: "idle" as const, result: "", color: NODE_COLORS.run },
   },
-];
-
-const decisionMatrixEdges: CanvasEdge[] = [
-  edge("tpl-goal", "tpl-run"),
-  edge("tpl-c1", "tpl-run"),
-  edge("tpl-c2", "tpl-run"),
-  edge("tpl-twin-analista", "tpl-run"),
-  edge("tpl-twin-devil", "tpl-run"),
-  edge("tpl-perp1", "tpl-run"),
-  edge("tpl-perp2", "tpl-run"),
-  edge("tpl-twin-analista", "tpl-c1"),
-  edge("tpl-twin-devil", "tpl-c2"),
-  edge("tpl-perp1", "tpl-c1"),
-  edge("tpl-perp2", "tpl-c2"),
 ];
 
 // --- Template 3: Research Synthesis ---
@@ -225,19 +185,6 @@ const researchSynthesisNodes: CanvasNode[] = [
   },
 ];
 
-const researchSynthesisEdges: CanvasEdge[] = [
-  edge("tpl-goal", "tpl-run"),
-  edge("tpl-c1", "tpl-run"),
-  edge("tpl-c2", "tpl-run"),
-  edge("tpl-c3", "tpl-run"),
-  edge("tpl-c4", "tpl-run"),
-  edge("tpl-t1", "tpl-run"),
-  edge("tpl-t2", "tpl-run"),
-  edge("tpl-twin-ricercatore", "tpl-run"),
-  edge("tpl-perp1", "tpl-run"),
-  edge("tpl-perp2", "tpl-run"),
-];
-
 // --- Export ---
 
 export const FLOW_TEMPLATES: FlowTemplate[] = [
@@ -246,20 +193,17 @@ export const FLOW_TEMPLATES: FlowTemplate[] = [
     name: "Product Critique",
     description: "Valida un concept di prodotto con twin critico e innovatore",
     nodes: productCritiqueNodes,
-    edges: productCritiqueEdges,
   },
   {
     id: "decision-matrix",
     name: "Decision Matrix",
     description: "Confronta opzioni con analista e devil's advocate",
     nodes: decisionMatrixNodes,
-    edges: decisionMatrixEdges,
   },
   {
     id: "research-synthesis",
     name: "Research Synthesis",
     description: "Sintetizza ricerca con temi chiave, citazioni e domande",
     nodes: researchSynthesisNodes,
-    edges: researchSynthesisEdges,
   },
 ];

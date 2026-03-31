@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { useNodeEditor } from "@/hooks/use-node-editor";
 import { NODE_COLORS } from "@/config/constants";
 import { tintBg } from "@/lib/node-style";
+import { ColorSwatchPicker } from "@/components/ui/color-picker";
 import type {
   TextNodeData,
   ConceptCardData,
@@ -104,6 +105,21 @@ function FieldInput({
   );
 }
 
+function ColorField({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (color: string) => void;
+}) {
+  return (
+    <div>
+      <FieldLabel>Color</FieldLabel>
+      <ColorSwatchPicker value={value} onChange={onChange} />
+    </div>
+  );
+}
+
 // --- Per-type form components ---
 
 function TextForm({
@@ -114,15 +130,18 @@ function TextForm({
   onChange: (patch: Partial<TextNodeData>) => void;
 }) {
   return (
-    <div>
-      <FieldLabel>Text</FieldLabel>
-      <FieldInput
-        value={data.text}
-        onChange={(text) => onChange({ text })}
-        placeholder="Write your note..."
-        multiline
-        autoFocus
-      />
+    <div className="space-y-4">
+      <div>
+        <FieldLabel>Text</FieldLabel>
+        <FieldInput
+          value={data.text}
+          onChange={(text) => onChange({ text })}
+          placeholder="Write your note..."
+          multiline
+          autoFocus
+        />
+      </div>
+      <ColorField value={data.color} onChange={(color) => onChange({ color })} />
     </div>
   );
 }
@@ -200,6 +219,7 @@ function ConceptForm({
           )}
         </div>
       </div>
+      <ColorField value={data.color} onChange={(color) => onChange({ color })} />
     </div>
   );
 }
@@ -258,6 +278,7 @@ function GoalForm({
           ))}
         </div>
       </div>
+      <ColorField value={data.color} onChange={(color) => onChange({ color })} />
     </div>
   );
 }
@@ -311,6 +332,7 @@ function PerplexityForm({
           This question blocks progress
         </button>
       </div>
+      <ColorField value={data.color} onChange={(color) => onChange({ color })} />
     </div>
   );
 }
@@ -361,6 +383,7 @@ function DigitalTwinForm({
           multiline
         />
       </div>
+      <ColorField value={data.color} onChange={(color) => onChange({ color })} />
     </div>
   );
 }
@@ -417,6 +440,7 @@ function ImageForm({
           placeholder="Image caption..."
         />
       </div>
+      <ColorField value={data.color} onChange={(color) => onChange({ color })} />
     </div>
   );
 }

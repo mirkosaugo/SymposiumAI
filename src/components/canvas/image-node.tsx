@@ -5,26 +5,17 @@ import { type NodeProps } from "@xyflow/react";
 import { ImagePlus } from "lucide-react";
 import type { ImageUploadData } from "@/types/canvas";
 import { useNodeData } from "@/hooks/use-node-data";
-import { useConnectMode } from "@/hooks/use-connect-mode";
-import { getCardStyle, getConnectHoverShadow } from "@/lib/node-style";
-import { NodeHandles } from "./node-handles";
+import { getCardStyle } from "@/lib/node-style";
 import { NodeActions } from "./node-actions";
 import { NodeHeader } from "./node-header";
 
 function ImageNodeComponent({ id, data, selected }: NodeProps) {
   const [nodeData] = useNodeData<ImageUploadData>(id, data);
-  const { hoveringNode } = useConnectMode();
-  const isConnectHover = hoveringNode === id;
-
   return (
     <div
       className="group relative w-64 rounded-2xl overflow-hidden shadow-lg transition-shadow bg-[var(--node-bg)]"
-      style={{
-        ...getCardStyle(nodeData.color, selected),
-        ...(isConnectHover ? getConnectHoverShadow(nodeData.color) : {}),
-      }}
+      style={getCardStyle(nodeData.color, selected)}
     >
-      <NodeHandles />
       <NodeActions nodeId={id} />
       <NodeHeader icon={ImagePlus} label="Image" color={nodeData.color} />
 

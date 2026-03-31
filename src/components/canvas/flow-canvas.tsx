@@ -6,22 +6,16 @@ import {
   Background,
   BackgroundVariant,
   useNodesState,
-  useEdgesState,
   useReactFlow,
   ReactFlowProvider,
-  type OnConnect,
-  type NodeMouseHandler,
-  addEdge,
   useViewport,
-  getIncomers,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
 import type { ToolMode, CanvasNode, RunNodeData, TextNodeData, ConceptCardData, ImageUploadData, GoalCardData, PerplexityCardData, DigitalTwinData, SynthesisOutputData, NodeInput } from "@/types/canvas";
-import { initialNodes, initialEdges } from "@/config/initial-data";
-import { NODE_COLORS, SNAP_GRID, DEFAULT_EDGE_STYLE } from "@/config/constants";
-import { getBestHandle } from "@/lib/node-style";
-import { ConnectModeContext } from "@/hooks/use-connect-mode";
+import { initialNodes } from "@/config/initial-data";
+import { NODE_COLORS, SNAP_GRID } from "@/config/constants";
+import { loadNodes, useCanvasStorage } from "@/hooks/use-canvas-storage";
 import { NodeEditorContext } from "@/hooks/use-node-editor";
 import { NodeEditDrawer } from "./node-edit-drawer";
 import { TextNodeComponent_ } from "./text-node";
@@ -33,11 +27,10 @@ import { PerplexityCardNodeComponent_ } from "./perplexity-card-node";
 import { DigitalTwinNodeComponent_ } from "./digital-twin-node";
 import { SynthesisOutputNodeComponent_ } from "./synthesis-output-node";
 import { ChainFlowContext } from "@/hooks/use-chain-flow";
-import { CustomEdge } from "./custom-edge";
 import { AmbientGlow } from "./ambient-glow";
 import { DotGlowBackground } from "./dot-glow-background";
-import { ConnectionLinePreview } from "./connection-line-preview";
 import { CanvasToolbar } from "./canvas-toolbar";
+import { ColorFilterBar } from "./color-filter-bar";
 import { PromptBar } from "@/components/prompt/prompt-bar";
 import { StatusBar } from "@/components/panels/status-bar";
 import type { FlowTemplate } from "@/config/flow-templates";
@@ -70,15 +63,37 @@ function buildNodeData(type: string) {
 
 function FlowCanvasInner() {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [activeTool, setActiveTool] = useState<ToolMode>("select");
   const [isRunning, setIsRunning] = useState(false);
-  const [connectingFrom, setConnectingFrom] = useState<string | null>(null);
-  const [hoveringNode, setHoveringNode] = useState<string | null>(null);
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
   const [isNewNode, setIsNewNode] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
   const { zoomIn, zoomOut, fitView, screenToFlowPosition, getNode } = useReactFlow();
   const viewport = useViewport();
+  const { save, exportJSON, importJSON } = useCanvasStorage();
+
+  // Hydrate from localStorage after mount
+  useEffect(() => {
+    const saved = loadNodes();
+    if (saved !== initialNodes) {
+      setNodes(saved);
+    }
+    // Sync nodeIdCounter to avoid duplicate IDs
+    for (const n of saved) {
+      const match = n.id.match(/^node-(\d+)$/);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (num >= nodeIdCounter) nodeIdCounter = num + 1;
+      }
+    }
+    setHydrated(true);
+  }, [setNodes]);
+
+  // Auto-save on every node change (only after hydration)
+  useEffect(() => {
+    if (!hydrated) return;
+    save(nodes);
+  }, [nodes, save, hydrated]);
 
   const openEditor = useCallback((nodeId: string, isNew = false) => {
     setEditingNodeId(nodeId);
@@ -104,156 +119,6 @@ function FlowCanvasInner() {
     []
   );
 
-  const edgeTypes = useMemo(
-    () => ({ custom: CustomEdge }),
-    []
-  );
-
-  // --- Connect mode ---
-
-  const startConnect = useCallback(
-    (nodeId: string) => {
-      setConnectingFrom(nodeId);
-      // Deselect all so toolbar disappears
-      setNodes((nds) => nds.map((n) => ({ ...n, selected: false })));
-    },
-    [setNodes]
-  );
-
-  const onNodeClick: NodeMouseHandler = useCallback(
-    (_event, node) => {
-      if (!connectingFrom) return;
-      if (connectingFrom === node.id) {
-        // Clicked same node — cancel
-        setConnectingFrom(null);
-        return;
-      }
-
-      // Compute best handles based on node positions
-      const sourceNode = getNode(connectingFrom);
-      const targetNode = node;
-      const handles = sourceNode ? getBestHandle(
-        { x: sourceNode.position.x, y: sourceNode.position.y, w: sourceNode.measured?.width ?? 250, h: sourceNode.measured?.height ?? 150 },
-        { x: targetNode.position.x, y: targetNode.position.y, w: targetNode.measured?.width ?? 250, h: targetNode.measured?.height ?? 150 },
-      ) : { sourceHandle: "right", targetHandle: "left" };
-
-      // Create edge
-      setEdges((eds) =>
-        addEdge(
-          {
-            id: `e-${connectingFrom}-${node.id}-${Date.now()}`,
-            source: connectingFrom,
-            target: node.id,
-            sourceHandle: handles.sourceHandle,
-            targetHandle: handles.targetHandle,
-            type: "custom",
-            animated: true,
-            style: DEFAULT_EDGE_STYLE,
-          },
-          eds
-        )
-      );
-      setConnectingFrom(null);
-      setHoveringNode(null);
-    },
-    [connectingFrom, setEdges]
-  );
-
-  // Prevent node selection while connecting
-  const onNodeMouseEnter: NodeMouseHandler = useCallback(
-    (_event, node) => {
-      if (connectingFrom && connectingFrom !== node.id) {
-        setHoveringNode(node.id);
-      }
-    },
-    [connectingFrom]
-  );
-
-  const onNodeMouseLeave: NodeMouseHandler = useCallback(() => {
-    setHoveringNode(null);
-  }, []);
-
-  const cancelConnect = useCallback(() => {
-    setConnectingFrom(null);
-    setHoveringNode(null);
-  }, []);
-
-  const onPaneClick = useCallback(() => {
-    if (connectingFrom) cancelConnect();
-  }, [connectingFrom, cancelConnect]);
-
-  // Escape key cancels connect mode
-  useEffect(() => {
-    if (!connectingFrom) return;
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") cancelConnect();
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [connectingFrom, cancelConnect]);
-
-  // Deselect all nodes while in connect mode
-  const styledNodes = useMemo(() => {
-    if (!connectingFrom) return nodes;
-    return nodes.map((n) => ({ ...n, selected: false }));
-  }, [nodes, connectingFrom]);
-
-  // --- Standard handlers ---
-
-  const onConnect: OnConnect = useCallback(
-    (params) => {
-      const sNode = params.source ? getNode(params.source) : null;
-      const tNode = params.target ? getNode(params.target) : null;
-      const handles = sNode && tNode ? getBestHandle(
-        { x: sNode.position.x, y: sNode.position.y, w: sNode.measured?.width ?? 250, h: sNode.measured?.height ?? 150 },
-        { x: tNode.position.x, y: tNode.position.y, w: tNode.measured?.width ?? 250, h: tNode.measured?.height ?? 150 },
-      ) : {};
-
-      setEdges((eds) =>
-        addEdge(
-          { ...params, ...handles, type: "custom", animated: true, style: DEFAULT_EDGE_STYLE },
-          eds
-        )
-      );
-    },
-    [setEdges, getNode]
-  );
-
-  // Auto-select best handles when nodes move
-  useEffect(() => {
-    setEdges((eds) =>
-      eds.map((edge) => {
-        const sourceNode = nodes.find((n) => n.id === edge.source);
-        const targetNode = nodes.find((n) => n.id === edge.target);
-        if (!sourceNode || !targetNode) return edge;
-
-        const s = {
-          x: sourceNode.position.x,
-          y: sourceNode.position.y,
-          w: sourceNode.measured?.width ?? 250,
-          h: sourceNode.measured?.height ?? 150,
-        };
-        const t = {
-          x: targetNode.position.x,
-          y: targetNode.position.y,
-          w: targetNode.measured?.width ?? 250,
-          h: targetNode.measured?.height ?? 150,
-        };
-        const { sourceHandle, targetHandle } = getBestHandle(s, t);
-
-        if (edge.sourceHandle === sourceHandle && edge.targetHandle === targetHandle) {
-          return edge;
-        }
-        return { ...edge, sourceHandle, targetHandle };
-      })
-    );
-  }, [nodes, setEdges]);
-
-  const defaultEdgeOptions = useMemo(
-    () => ({ type: "custom", animated: true, style: DEFAULT_EDGE_STYLE }),
-    []
-  );
-
   const handleAddNode = useCallback(
     (type: "text" | "conceptCard" | "imageUpload" | "run" | "goalCard" | "perplexityCard" | "digitalTwin") => {
       const center = screenToFlowPosition({
@@ -272,7 +137,6 @@ function FlowCanvasInner() {
       setNodes((nds) => [...nds, newNode]);
 
       // Auto-open editor for new nodes (except run nodes which are non-editable)
-      // Delay to let React Flow process the new node first
       if (type !== "run") {
         requestAnimationFrame(() => openEditor(newNode.id, true));
       }
@@ -307,44 +171,38 @@ function FlowCanvasInner() {
       } as CanvasNode;
 
       setNodes((nds) => [...nds, newNode]);
-      setEdges((eds) =>
-        addEdge(
-          {
-            id: `e-${runNodeId}-${newNodeId}`,
-            source: runNodeId,
-            target: newNodeId,
-            type: "custom",
-            animated: true,
-            style: DEFAULT_EDGE_STYLE,
-          },
-          eds
-        )
-      );
     },
-    [getNode, setNodes, setEdges]
+    [getNode, setNodes]
   );
 
   const handleLoadTemplate = useCallback(
     (template: FlowTemplate) => {
       setNodes(template.nodes);
-      setEdges(template.edges);
-      // Let React Flow process the new nodes before fitting view
       requestAnimationFrame(() => fitView({ padding: 0.2 }));
     },
-    [setNodes, setEdges, fitView]
+    [setNodes, fitView]
   );
 
+  const handleExport = useCallback(() => {
+    exportJSON(nodes);
+  }, [nodes, exportJSON]);
+
+  const handleImport = useCallback(async () => {
+    const imported = await importJSON();
+    if (imported) {
+      setNodes(imported);
+      requestAnimationFrame(() => fitView({ padding: 0.2 }));
+    }
+  }, [importJSON, setNodes, fitView]);
+
+  // Gather all non-run nodes as inputs for the AI run
   const gatherInputs = useCallback(
-    (runNodeId: string): NodeInput[] => {
-      const visited = new Set<string>();
+    (_runNodeId: string): NodeInput[] => {
       const inputs: NodeInput[] = [];
 
-      function walk(nodeId: string) {
-        if (visited.has(nodeId)) return;
-        visited.add(nodeId);
-
-        const node = nodes.find((n) => n.id === nodeId);
-        if (!node) return;
+      for (const node of nodes) {
+        // Skip run nodes and synthesis output nodes
+        if (node.type === "run" || node.type === "synthesisOutput") continue;
 
         if (node.type === "text") {
           const d = node.data as unknown as TextNodeData;
@@ -390,30 +248,12 @@ function FlowCanvasInner() {
             content: `[${d.mode.toUpperCase()} - ${d.name || "Unnamed"}]`,
             metadata: { mode: d.mode, personality: d.personality },
           });
-        } else if (node.type === "synthesisOutput") {
-          const d = node.data as unknown as SynthesisOutputData;
-          if (d.synthesis) {
-            inputs.push({
-              nodeId: node.id, nodeType: "synthesisOutput", role: "context",
-              content: d.synthesis,
-              metadata: { source: "previous-run-flow" },
-            });
-          }
         }
-
-        const incomers = getIncomers(node, nodes, edges);
-        incomers.forEach((inc) => walk(inc.id));
-      }
-
-      const runNode = nodes.find((n) => n.id === runNodeId);
-      if (runNode) {
-        const incomers = getIncomers(runNode, nodes, edges);
-        incomers.forEach((inc) => walk(inc.id));
       }
 
       return inputs;
     },
-    [nodes, edges]
+    [nodes]
   );
 
   const handleRunAI = useCallback(async () => {
@@ -485,11 +325,6 @@ function FlowCanvasInner() {
     setIsRunning(false);
   }, [nodes, gatherInputs, setNodes]);
 
-  const connectModeValue = useMemo(
-    () => ({ connectingFrom, hoveringNode, startConnect }),
-    [connectingFrom, hoveringNode, startConnect]
-  );
-
   const nodeEditorValue = useMemo(
     () => ({ editingNodeId, isNewNode, openEditor, closeEditor }),
     [editingNodeId, isNewNode, openEditor, closeEditor]
@@ -503,29 +338,15 @@ function FlowCanvasInner() {
   return (
     <ChainFlowContext value={chainFlowValue}>
     <NodeEditorContext value={nodeEditorValue}>
-    <ConnectModeContext value={connectModeValue}>
-      <div
-        className="relative h-full w-full"
-        style={{ cursor: connectingFrom ? "crosshair" : undefined }}
-      >
+      <div className="relative h-full w-full">
         <ReactFlow
-          nodes={connectingFrom ? styledNodes : nodes}
-          edges={edges}
-          onNodesChange={connectingFrom ? undefined : onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          onNodeClick={onNodeClick}
-          onNodeMouseEnter={onNodeMouseEnter}
-          onNodeMouseLeave={onNodeMouseLeave}
-          onPaneClick={onPaneClick}
+          nodes={nodes}
+          edges={[]}
+          onNodesChange={onNodesChange}
           nodeTypes={nodeTypes}
-          edgeTypes={edgeTypes}
-          defaultEdgeOptions={defaultEdgeOptions}
-          panOnDrag={connectingFrom ? false : activeTool === "hand" ? true : [1]}
-          selectionOnDrag={connectingFrom ? false : activeTool === "select"}
-          nodesDraggable={!connectingFrom}
-          nodesConnectable={!connectingFrom}
-          elementsSelectable={!connectingFrom}
+          panOnDrag={activeTool === "hand" ? true : [1]}
+          selectionOnDrag={activeTool === "select"}
+          nodesConnectable={false}
           snapToGrid
           snapGrid={SNAP_GRID}
           minZoom={0.3}
@@ -533,7 +354,7 @@ function FlowCanvasInner() {
           fitView
           fitViewOptions={{ padding: 0.2, includeHiddenNodes: true }}
           proOptions={{ hideAttribution: true }}
-          deleteKeyCode={connectingFrom ? [] : ["Backspace", "Delete"]}
+          deleteKeyCode={["Backspace", "Delete"]}
           style={{
             ["--xy-background-color" as string]: "var(--color-background)",
           }}
@@ -547,14 +368,11 @@ function FlowCanvasInner() {
           <DotGlowBackground />
         </ReactFlow>
 
-        {/* Connection preview line */}
-        {connectingFrom && <ConnectionLinePreview sourceNodeId={connectingFrom} />}
-
-
         <AmbientGlow active={isRunning} />
 
         {/* Overlays */}
-        <CanvasToolbar activeTool={activeTool} onToolChange={setActiveTool} onLoadTemplate={handleLoadTemplate} hasContent={nodes.length > 0} />
+        <ColorFilterBar nodes={nodes} />
+        <CanvasToolbar activeTool={activeTool} onToolChange={setActiveTool} onLoadTemplate={handleLoadTemplate} onExport={handleExport} onImport={handleImport} hasContent={nodes.length > 0} />
         <PromptBar onAddNode={handleAddNode} onRunAI={handleRunAI} isRunning={isRunning} />
         <StatusBar
           zoom={viewport.zoom}
@@ -564,7 +382,6 @@ function FlowCanvasInner() {
         />
         <NodeEditDrawer />
       </div>
-    </ConnectModeContext>
     </NodeEditorContext>
     </ChainFlowContext>
   );
