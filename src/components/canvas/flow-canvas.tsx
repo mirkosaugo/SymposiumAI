@@ -17,15 +17,22 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
-import type { ToolMode, CanvasNode, RunNodeData, TextNodeData, ConceptCardData, ImageUploadData } from "@/types/canvas";
+import type { ToolMode, CanvasNode, RunNodeData, TextNodeData, ConceptCardData, ImageUploadData, GoalCardData, PerplexityCardData, DigitalTwinData, SynthesisOutputData, NodeInput } from "@/types/canvas";
 import { initialNodes, initialEdges } from "@/config/initial-data";
 import { NODE_COLORS, SNAP_GRID, DEFAULT_EDGE_STYLE } from "@/config/constants";
 import { getBestHandle } from "@/lib/node-style";
 import { ConnectModeContext } from "@/hooks/use-connect-mode";
+import { NodeEditorContext } from "@/hooks/use-node-editor";
+import { NodeEditDrawer } from "./node-edit-drawer";
 import { TextNodeComponent_ } from "./text-node";
 import { ConceptCardNodeComponent_ } from "./concept-card-node";
 import { ImageNodeComponent_ } from "./image-node";
 import { RunNodeComponent_ } from "./run-node";
+import { GoalCardNodeComponent_ } from "./goal-card-node";
+import { PerplexityCardNodeComponent_ } from "./perplexity-card-node";
+import { DigitalTwinNodeComponent_ } from "./digital-twin-node";
+import { SynthesisOutputNodeComponent_ } from "./synthesis-output-node";
+import { ChainFlowContext } from "@/hooks/use-chain-flow";
 import { CustomEdge } from "./custom-edge";
 import { AmbientGlow } from "./ambient-glow";
 import { DotGlowBackground } from "./dot-glow-background";
@@ -33,6 +40,7 @@ import { ConnectionLinePreview } from "./connection-line-preview";
 import { CanvasToolbar } from "./canvas-toolbar";
 import { PromptBar } from "@/components/prompt/prompt-bar";
 import { StatusBar } from "@/components/panels/status-bar";
+import type { FlowTemplate } from "@/config/flow-templates";
 
 let nodeIdCounter = 100;
 function nextId() {
@@ -49,6 +57,12 @@ function buildNodeData(type: string) {
       return { src: null, caption: "", color: NODE_COLORS.imageUpload };
     case "run":
       return { label: "Run AI", status: "idle" as const, result: "", color: NODE_COLORS.run };
+    case "goalCard":
+      return { title: "", successCriteria: "", timeframe: "", priority: "medium" as const, color: NODE_COLORS.goalCard };
+    case "perplexityCard":
+      return { question: "", context: "", isBlocking: false, color: NODE_COLORS.perplexityCard };
+    case "digitalTwin":
+      return { name: "", mode: "collabora" as const, personality: "", lastResponse: "", status: "idle" as const, color: NODE_COLORS.digitalTwin };
     default:
       return {};
   }
@@ -61,8 +75,20 @@ function FlowCanvasInner() {
   const [isRunning, setIsRunning] = useState(false);
   const [connectingFrom, setConnectingFrom] = useState<string | null>(null);
   const [hoveringNode, setHoveringNode] = useState<string | null>(null);
+  const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
+  const [isNewNode, setIsNewNode] = useState(false);
   const { zoomIn, zoomOut, fitView, screenToFlowPosition, getNode } = useReactFlow();
   const viewport = useViewport();
+
+  const openEditor = useCallback((nodeId: string, isNew = false) => {
+    setEditingNodeId(nodeId);
+    setIsNewNode(isNew);
+  }, []);
+
+  const closeEditor = useCallback(() => {
+    setEditingNodeId(null);
+    setIsNewNode(false);
+  }, []);
 
   const nodeTypes = useMemo(
     () => ({
@@ -70,6 +96,10 @@ function FlowCanvasInner() {
       conceptCard: ConceptCardNodeComponent_,
       imageUpload: ImageNodeComponent_,
       run: RunNodeComponent_,
+      goalCard: GoalCardNodeComponent_,
+      perplexityCard: PerplexityCardNodeComponent_,
+      digitalTwin: DigitalTwinNodeComponent_,
+      synthesisOutput: SynthesisOutputNodeComponent_,
     }),
     []
   );
@@ -225,7 +255,7 @@ function FlowCanvasInner() {
   );
 
   const handleAddNode = useCallback(
-    (type: "text" | "conceptCard" | "imageUpload" | "run") => {
+    (type: "text" | "conceptCard" | "imageUpload" | "run" | "goalCard" | "perplexityCard" | "digitalTwin") => {
       const center = screenToFlowPosition({
         x: window.innerWidth / 2,
         y: window.innerHeight / 2 - 100,
@@ -240,14 +270,74 @@ function FlowCanvasInner() {
       } as CanvasNode;
 
       setNodes((nds) => [...nds, newNode]);
+
+      // Auto-open editor for new nodes (except run nodes which are non-editable)
+      // Delay to let React Flow process the new node first
+      if (type !== "run") {
+        requestAnimationFrame(() => openEditor(newNode.id, true));
+      }
     },
-    [screenToFlowPosition, setNodes]
+    [screenToFlowPosition, setNodes, openEditor]
+  );
+
+  const chainFromRun = useCallback(
+    (runNodeId: string) => {
+      const runNode = getNode(runNodeId);
+      if (!runNode) return;
+
+      const runData = runNode.data as unknown as RunNodeData;
+      const synthesis = runData.structuredOutput?.synthesis || runData.result || "";
+      if (!synthesis) return;
+
+      const newNodeId = nextId();
+      const newNode: CanvasNode = {
+        id: newNodeId,
+        type: "synthesisOutput",
+        position: {
+          x: runNode.position.x + 350,
+          y: runNode.position.y,
+        },
+        data: {
+          sourceRunNodeId: runNodeId,
+          synthesis,
+          timestamp: Date.now(),
+          label: "Flow Output",
+          color: NODE_COLORS.run,
+        },
+      } as CanvasNode;
+
+      setNodes((nds) => [...nds, newNode]);
+      setEdges((eds) =>
+        addEdge(
+          {
+            id: `e-${runNodeId}-${newNodeId}`,
+            source: runNodeId,
+            target: newNodeId,
+            type: "custom",
+            animated: true,
+            style: DEFAULT_EDGE_STYLE,
+          },
+          eds
+        )
+      );
+    },
+    [getNode, setNodes, setEdges]
+  );
+
+  const handleLoadTemplate = useCallback(
+    (template: FlowTemplate) => {
+      setNodes(template.nodes);
+      setEdges(template.edges);
+      // Let React Flow process the new nodes before fitting view
+      requestAnimationFrame(() => fitView({ padding: 0.2 }));
+    },
+    [setNodes, setEdges, fitView]
   );
 
   const gatherInputs = useCallback(
-    (runNodeId: string) => {
+    (runNodeId: string): NodeInput[] => {
       const visited = new Set<string>();
-      const contents: string[] = [];
+      const inputs: NodeInput[] = [];
 
       function walk(nodeId: string) {
         if (visited.has(nodeId)) return;
@@ -258,15 +348,57 @@ function FlowCanvasInner() {
 
         if (node.type === "text") {
           const d = node.data as unknown as TextNodeData;
-          if (d.text) contents.push(`[Text] ${d.text}`);
+          if (d.text) {
+            inputs.push({ nodeId: node.id, nodeType: "text", role: "context", content: d.text });
+          }
         } else if (node.type === "conceptCard") {
           const d = node.data as unknown as ConceptCardData;
           if (d.title || d.description) {
-            contents.push(`[Concept: ${d.title}] ${d.description} (tags: ${d.tags.join(", ")})`);
+            inputs.push({
+              nodeId: node.id, nodeType: "conceptCard", role: "idea",
+              content: `${d.title}: ${d.description}`,
+              metadata: { tags: d.tags.join(", ") },
+            });
           }
         } else if (node.type === "imageUpload") {
           const d = node.data as unknown as ImageUploadData;
-          if (d.caption) contents.push(`[Image] ${d.caption}`);
+          if (d.caption) {
+            inputs.push({ nodeId: node.id, nodeType: "imageUpload", role: "evidence", content: d.caption });
+          }
+        } else if (node.type === "goalCard") {
+          const d = node.data as unknown as GoalCardData;
+          if (d.title) {
+            inputs.push({
+              nodeId: node.id, nodeType: "goalCard", role: "goal",
+              content: `${d.title} (success: ${d.successCriteria})`,
+              metadata: { priority: d.priority, timeframe: d.timeframe },
+            });
+          }
+        } else if (node.type === "perplexityCard") {
+          const d = node.data as unknown as PerplexityCardData;
+          if (d.question) {
+            inputs.push({
+              nodeId: node.id, nodeType: "perplexityCard", role: "question",
+              content: d.question,
+              metadata: { isBlocking: String(d.isBlocking), ...(d.context ? { context: d.context } : {}) },
+            });
+          }
+        } else if (node.type === "digitalTwin") {
+          const d = node.data as unknown as DigitalTwinData;
+          inputs.push({
+            nodeId: node.id, nodeType: "digitalTwin", role: "perspective",
+            content: `[${d.mode.toUpperCase()} - ${d.name || "Unnamed"}]`,
+            metadata: { mode: d.mode, personality: d.personality },
+          });
+        } else if (node.type === "synthesisOutput") {
+          const d = node.data as unknown as SynthesisOutputData;
+          if (d.synthesis) {
+            inputs.push({
+              nodeId: node.id, nodeType: "synthesisOutput", role: "context",
+              content: d.synthesis,
+              metadata: { source: "previous-run-flow" },
+            });
+          }
         }
 
         const incomers = getIncomers(node, nodes, edges);
@@ -279,7 +411,7 @@ function FlowCanvasInner() {
         incomers.forEach((inc) => walk(inc.id));
       }
 
-      return contents;
+      return inputs;
     },
     [nodes, edges]
   );
@@ -294,10 +426,19 @@ function FlowCanvasInner() {
       const inputs = gatherInputs(runNode.id);
       if (inputs.length === 0) continue;
 
+      // Set run node to running + twins to thinking
+      const twinNodeIds = inputs.filter((i) => i.nodeType === "digitalTwin").map((i) => i.nodeId);
+
       setNodes((nds) =>
-        nds.map((n) =>
-          n.id === runNode.id ? { ...n, data: { ...n.data, status: "running", result: "" } as RunNodeData } as CanvasNode : n
-        )
+        nds.map((n) => {
+          if (n.id === runNode.id) {
+            return { ...n, data: { ...n.data, status: "running", result: "", structuredOutput: undefined } as RunNodeData } as CanvasNode;
+          }
+          if (twinNodeIds.includes(n.id)) {
+            return { ...n, data: { ...n.data, status: "thinking", lastResponse: "" } as DigitalTwinData } as CanvasNode;
+          }
+          return n;
+        })
       );
 
       try {
@@ -311,18 +452,32 @@ function FlowCanvasInner() {
 
         const json = await res.json();
         const result = json.result || "No result";
+        const structuredOutput = json.structuredOutput || undefined;
+        const twinResponses: Record<string, string> = json.twinResponses || {};
 
         setNodes((nds) =>
-          nds.map((n) =>
-            n.id === runNode.id ? { ...n, data: { ...n.data, status: "done", result } as RunNodeData } as CanvasNode : n
-          )
+          nds.map((n) => {
+            if (n.id === runNode.id) {
+              return { ...n, data: { ...n.data, status: "done", result, structuredOutput } as RunNodeData } as CanvasNode;
+            }
+            if (twinResponses[n.id]) {
+              return { ...n, data: { ...n.data, status: "done", lastResponse: twinResponses[n.id] } as DigitalTwinData } as CanvasNode;
+            }
+            return n;
+          })
         );
       } catch (err) {
         const message = err instanceof Error ? err.message : "Unknown error";
         setNodes((nds) =>
-          nds.map((n) =>
-            n.id === runNode.id ? { ...n, data: { ...n.data, status: "error", result: message } as RunNodeData } as CanvasNode : n
-          )
+          nds.map((n) => {
+            if (n.id === runNode.id) {
+              return { ...n, data: { ...n.data, status: "error", result: message } as RunNodeData } as CanvasNode;
+            }
+            if (twinNodeIds.includes(n.id)) {
+              return { ...n, data: { ...n.data, status: "idle" } as DigitalTwinData } as CanvasNode;
+            }
+            return n;
+          })
         );
       }
     }
@@ -335,7 +490,19 @@ function FlowCanvasInner() {
     [connectingFrom, hoveringNode, startConnect]
   );
 
+  const nodeEditorValue = useMemo(
+    () => ({ editingNodeId, isNewNode, openEditor, closeEditor }),
+    [editingNodeId, isNewNode, openEditor, closeEditor]
+  );
+
+  const chainFlowValue = useMemo(
+    () => ({ chainFromRun }),
+    [chainFromRun]
+  );
+
   return (
+    <ChainFlowContext value={chainFlowValue}>
+    <NodeEditorContext value={nodeEditorValue}>
     <ConnectModeContext value={connectModeValue}>
       <div
         className="relative h-full w-full"
@@ -387,7 +554,7 @@ function FlowCanvasInner() {
         <AmbientGlow active={isRunning} />
 
         {/* Overlays */}
-        <CanvasToolbar activeTool={activeTool} onToolChange={setActiveTool} />
+        <CanvasToolbar activeTool={activeTool} onToolChange={setActiveTool} onLoadTemplate={handleLoadTemplate} hasContent={nodes.length > 0} />
         <PromptBar onAddNode={handleAddNode} onRunAI={handleRunAI} isRunning={isRunning} />
         <StatusBar
           zoom={viewport.zoom}
@@ -395,8 +562,11 @@ function FlowCanvasInner() {
           onZoomOut={() => zoomOut()}
           onFitView={() => fitView({ padding: 0.1 })}
         />
+        <NodeEditDrawer />
       </div>
     </ConnectModeContext>
+    </NodeEditorContext>
+    </ChainFlowContext>
   );
 }
 

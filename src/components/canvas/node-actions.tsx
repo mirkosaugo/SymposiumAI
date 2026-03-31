@@ -10,19 +10,31 @@ import {
 } from "@/components/ui/tooltip";
 import { GLASS_CONTAINER_CLASS, ICON_BTN_CLASS } from "@/config/constants";
 import { useConnectMode } from "@/hooks/use-connect-mode";
+import { useNodeEditor } from "@/hooks/use-node-editor";
 
 interface NodeActionsProps {
   nodeId: string;
+  /** @deprecated Use drawer-based editing via context instead */
   onEdit?: () => void;
+  hideEdit?: boolean;
 }
 
-export function NodeActions({ nodeId, onEdit }: NodeActionsProps) {
+export function NodeActions({ nodeId, onEdit, hideEdit }: NodeActionsProps) {
   const { deleteElements } = useReactFlow();
   const { startConnect } = useConnectMode();
+  const { openEditor } = useNodeEditor();
 
   const handleConnect = useCallback(() => {
     startConnect(nodeId);
   }, [nodeId, startConnect]);
+
+  const handleEdit = useCallback(() => {
+    if (onEdit) {
+      onEdit();
+    } else {
+      openEditor(nodeId);
+    }
+  }, [nodeId, onEdit, openEditor]);
 
   return (
     <NodeToolbar position={Position.Right} offset={12} align="center">
@@ -34,12 +46,14 @@ export function NodeActions({ nodeId, onEdit }: NodeActionsProps) {
           <TooltipContent side="right">Connect</TooltipContent>
         </Tooltip>
 
-        <Tooltip>
-          <TooltipTrigger className={ICON_BTN_CLASS} onClick={onEdit}>
-            <Pencil className="h-4 w-4" />
-          </TooltipTrigger>
-          <TooltipContent side="right">Edit</TooltipContent>
-        </Tooltip>
+        {!hideEdit && (
+          <Tooltip>
+            <TooltipTrigger className={ICON_BTN_CLASS} onClick={handleEdit}>
+              <Pencil className="h-4 w-4" />
+            </TooltipTrigger>
+            <TooltipContent side="right">Edit</TooltipContent>
+          </Tooltip>
+        )}
 
         <Tooltip>
           <TooltipTrigger

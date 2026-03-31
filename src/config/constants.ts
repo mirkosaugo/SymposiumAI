@@ -4,6 +4,9 @@ export const NODE_COLORS = {
   conceptCard: "#A78BFA",
   imageUpload: "#38BDF8",
   run: "#34D399",
+  goalCard: "#FBBF24",
+  perplexityCard: "#FF6B9D",
+  digitalTwin: "#818CF8",
 } as const;
 
 // Default edge styling

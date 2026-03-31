@@ -6,6 +6,9 @@ import {
   Lightbulb,
   ImageIcon,
   Play,
+  Target,
+  HelpCircle,
+  Bot,
 } from "lucide-react";
 
 /* ------------------------------------------------------------------ */
@@ -37,6 +40,24 @@ const nodeTypes = [
     icon: Play,
     description: "AI execution with prompt and output",
   },
+  {
+    key: "goalCard" as const,
+    label: "Goal Card",
+    icon: Target,
+    description: "Objective with success criteria, timeframe, and priority",
+  },
+  {
+    key: "perplexityCard" as const,
+    label: "Perplexity Card",
+    icon: HelpCircle,
+    description: "Open question with optional blocking flag",
+  },
+  {
+    key: "digitalTwin" as const,
+    label: "Digital Twin",
+    icon: Bot,
+    description: "AI persona with programmable behavior mode",
+  },
 ];
 
 function NodeSwatch({
@@ -47,7 +68,7 @@ function NodeSwatch({
 }: {
   nodeKey: keyof typeof NODE_COLORS;
   label: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   description: string;
 }) {
   const color = NODE_COLORS[nodeKey];
@@ -65,11 +86,11 @@ function NodeSwatch({
       {/* Header */}
       <div
         className="flex items-center gap-2 px-4 py-2.5"
-        style={{ background: tintBg(color, 0.15) }}
+        style={tintBg(color, "15")}
       >
         <div
           className="flex h-6 w-6 items-center justify-center rounded-md"
-          style={{ background: tintBg(color, 0.25) }}
+          style={tintBg(color, "25")}
         >
           <Icon className="size-3.5" style={{ color }} />
         </div>

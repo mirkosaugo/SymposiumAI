@@ -8,6 +8,9 @@ import {
   Play,
   Sparkles,
   Send,
+  Target,
+  HelpCircle,
+  Bot,
 } from "lucide-react";
 import {
   Tooltip,
@@ -18,7 +21,7 @@ import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
 interface PromptBarProps {
-  onAddNode: (type: "text" | "conceptCard" | "imageUpload" | "run") => void;
+  onAddNode: (type: "text" | "conceptCard" | "imageUpload" | "run" | "goalCard" | "perplexityCard" | "digitalTwin") => void;
   onRunAI: () => void;
   isRunning: boolean;
 }
@@ -26,6 +29,9 @@ interface PromptBarProps {
 const nodeActions = [
   { type: "text" as const, icon: Type, label: "Testo" },
   { type: "conceptCard" as const, icon: Lightbulb, label: "Concept" },
+  { type: "goalCard" as const, icon: Target, label: "Goal" },
+  { type: "perplexityCard" as const, icon: HelpCircle, label: "Domanda" },
+  { type: "digitalTwin" as const, icon: Bot, label: "Digital Twin" },
   { type: "imageUpload" as const, icon: ImagePlus, label: "Immagine" },
   { type: "run" as const, icon: Play, label: "Run Node" },
 ];

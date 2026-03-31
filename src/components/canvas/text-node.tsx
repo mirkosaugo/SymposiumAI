@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useState } from "react";
+import { memo } from "react";
 import { type NodeProps } from "@xyflow/react";
 import { Type } from "lucide-react";
 import type { TextNodeData } from "@/types/canvas";
@@ -10,11 +10,9 @@ import { getCardStyle, getConnectHoverShadow } from "@/lib/node-style";
 import { NodeHandles } from "./node-handles";
 import { NodeActions } from "./node-actions";
 import { NodeHeader } from "./node-header";
-import { EditableField } from "./editable-field";
 
 function TextNodeComponent({ id, data, selected }: NodeProps) {
-  const [nodeData, update] = useNodeData<TextNodeData>(id, data);
-  const [editing, setEditing] = useState(false);
+  const [nodeData] = useNodeData<TextNodeData>(id, data);
   const { hoveringNode } = useConnectMode();
   const isConnectHover = hoveringNode === id;
 
@@ -27,18 +25,13 @@ function TextNodeComponent({ id, data, selected }: NodeProps) {
       }}
     >
       <NodeHandles />
-      <NodeActions nodeId={id} onEdit={() => setEditing(true)} />
+      <NodeActions nodeId={id} />
       <NodeHeader icon={Type} label="Text" color={nodeData.color} />
 
       <div className="px-4 py-3">
-        <EditableField
-          value={nodeData.text}
-          placeholder="Double click to write..."
-          onSave={(text) => update({ text })}
-          editing={editing}
-          onEditEnd={() => setEditing(false)}
-          multiline
-        />
+        <p className="text-sm text-foreground whitespace-pre-wrap">
+          {nodeData.text || <span className="text-muted-foreground/40 italic">Empty note</span>}
+        </p>
       </div>
     </div>
   );
