@@ -139,7 +139,7 @@ function RunNodeComponent({ id, data, selected }: NodeProps) {
         ...(hasStructured ? { minHeight: 300 } : {}),
       }}
     >
-      <NodeActions nodeId={id} hideEdit />
+      <NodeActions nodeId={id} />
 
       <NodeHeader icon={Play} label={nodeData.label} color={nodeData.color}>
         <div className="flex items-center gap-1.5">

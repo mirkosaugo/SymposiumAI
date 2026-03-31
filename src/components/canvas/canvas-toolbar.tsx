@@ -122,7 +122,7 @@ export function CanvasToolbar({
             </Tooltip>
           ))}
 
-          <div className="w-5 border-t border-border/30" />
+          {/* <div className="w-5 border-t border-border/30" /> */}
 
           {/* <Tooltip>
             <TooltipTrigger
@@ -133,24 +133,17 @@ export function CanvasToolbar({
             </TooltipTrigger>
             <TooltipContent side="left">Templates</TooltipContent>
           </Tooltip>
+          */}
 
-          <div className="w-5 border-t border-border/30" />
-
-          <Tooltip>
-            <TooltipTrigger
-              className={ICON_BTN_CLASS}
-              onClick={onExport}
-            >
+          {/* <Tooltip>
+            <TooltipTrigger className={ICON_BTN_CLASS} onClick={onExport}>
               <Download className="h-5 w-5" />
             </TooltipTrigger>
             <TooltipContent side="left">Export JSON</TooltipContent>
           </Tooltip>
 
           <Tooltip>
-            <TooltipTrigger
-              className={ICON_BTN_CLASS}
-              onClick={onImport}
-            >
+            <TooltipTrigger className={ICON_BTN_CLASS} onClick={onImport}>
               <Upload className="h-5 w-5" />
             </TooltipTrigger>
             <TooltipContent side="left">Import JSON</TooltipContent>

@@ -9,6 +9,7 @@ import {
   HelpCircle,
   Bot,
   ImagePlus,
+  Play,
   X,
   Plus,
   Trash2,
@@ -33,6 +34,7 @@ import type {
   PerplexityCardData,
   DigitalTwinData,
   ImageUploadData,
+  RunNodeData,
 } from "@/types/canvas";
 
 const NODE_META: Record<
@@ -45,6 +47,7 @@ const NODE_META: Record<
   perplexityCard: { icon: HelpCircle, label: "Open Question", color: NODE_COLORS.perplexityCard },
   digitalTwin: { icon: Bot, label: "Digital Twin", color: NODE_COLORS.digitalTwin },
   imageUpload: { icon: ImagePlus, label: "Image", color: NODE_COLORS.imageUpload },
+  run: { icon: Play, label: "Run Node", color: NODE_COLORS.run },
 };
 
 const PRIORITY_OPTIONS: { value: GoalCardData["priority"]; label: string; color: string }[] = [
@@ -445,11 +448,43 @@ function ImageForm({
   );
 }
 
+function RunForm({
+  data,
+  onChange,
+  takenColors,
+}: {
+  data: RunNodeData;
+  onChange: (patch: Partial<RunNodeData>) => void;
+  takenColors: string[];
+}) {
+  return (
+    <div className="space-y-4">
+      <div>
+        <FieldLabel>Title</FieldLabel>
+        <FieldInput
+          value={data.label}
+          onChange={(label) => onChange({ label })}
+          placeholder="Run node title..."
+          autoFocus
+        />
+      </div>
+      <div>
+        <FieldLabel>Color</FieldLabel>
+        <ColorSwatchPicker
+          value={data.color}
+          onChange={(color) => onChange({ color })}
+          disabledColors={takenColors}
+        />
+      </div>
+    </div>
+  );
+}
+
 // --- Main drawer ---
 
 export function NodeEditDrawer() {
   const { editingNodeId, isNewNode, closeEditor } = useNodeEditor();
-  const { getNode, updateNodeData, deleteElements } = useReactFlow();
+  const { getNode, getNodes, updateNodeData, deleteElements } = useReactFlow();
 
   // Local draft state — initialized from node data when editing starts
   const [draft, setDraft] = useState<Record<string, unknown>>({});
@@ -554,6 +589,17 @@ export function NodeEditDrawer() {
           )}
           {activeNodeType === "imageUpload" && (
             <ImageForm data={draft as unknown as ImageUploadData} onChange={patchDraft} />
+          )}
+          {activeNodeType === "run" && (
+            <RunForm
+              data={draft as unknown as RunNodeData}
+              onChange={patchDraft}
+              takenColors={
+                getNodes()
+                  .filter((n) => n.type === "run" && n.id !== editingNodeId)
+                  .map((n) => (n.data as unknown as RunNodeData).color)
+              }
+            />
           )}
         </div>
 

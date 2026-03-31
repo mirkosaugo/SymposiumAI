@@ -88,7 +88,7 @@ export const initialNodes: CanvasNode[] = [
       "y": 560
     },
     "data": {
-      "label": "Synthesize Art Concept",
+      "label": "Synthesize Concept",
       "status": "idle" as const,
       "result": "",
       "color": "#34D399"
@@ -165,6 +165,20 @@ export const initialNodes: CanvasNode[] = [
       "successCriteria": "I need to make money with this idea",
       "timeframe": "",
       "priority": "high" as const,
+      "color": "#A78BFA"
+    }
+  },
+  {
+    "id": "node-110",
+    "type": "run",
+    "position": {
+      "x": 656,
+      "y": 608
+    },
+    "data": {
+      "label": "Run ",
+      "status": "idle" as const,
+      "result": "",
       "color": "#A78BFA"
     }
   }

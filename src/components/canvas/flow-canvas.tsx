@@ -12,7 +12,19 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
-import type { ToolMode, CanvasNode, RunNodeData, TextNodeData, ConceptCardData, ImageUploadData, GoalCardData, PerplexityCardData, DigitalTwinData, SynthesisOutputData, NodeInput } from "@/types/canvas";
+import type {
+  ToolMode,
+  CanvasNode,
+  RunNodeData,
+  TextNodeData,
+  ConceptCardData,
+  ImageUploadData,
+  GoalCardData,
+  PerplexityCardData,
+  DigitalTwinData,
+  SynthesisOutputData,
+  NodeInput,
+} from "@/types/canvas";
 import { initialNodes } from "@/config/initial-data";
 import { NODE_COLORS, SNAP_GRID } from "@/config/constants";
 import { loadNodes, useCanvasStorage } from "@/hooks/use-canvas-storage";
@@ -45,17 +57,45 @@ function buildNodeData(type: string) {
     case "text":
       return { text: "", color: NODE_COLORS.text };
     case "conceptCard":
-      return { title: "", description: "", tags: [], color: NODE_COLORS.conceptCard };
+      return {
+        title: "",
+        description: "",
+        tags: [],
+        color: NODE_COLORS.conceptCard,
+      };
     case "imageUpload":
       return { src: null, caption: "", color: NODE_COLORS.imageUpload };
     case "run":
-      return { label: "Run AI", status: "idle" as const, result: "", color: NODE_COLORS.run };
+      return {
+        label: "Generate",
+        status: "idle" as const,
+        result: "",
+        color: NODE_COLORS.run,
+      };
     case "goalCard":
-      return { title: "", successCriteria: "", timeframe: "", priority: "medium" as const, color: NODE_COLORS.goalCard };
+      return {
+        title: "",
+        successCriteria: "",
+        timeframe: "",
+        priority: "medium" as const,
+        color: NODE_COLORS.goalCard,
+      };
     case "perplexityCard":
-      return { question: "", context: "", isBlocking: false, color: NODE_COLORS.perplexityCard };
+      return {
+        question: "",
+        context: "",
+        isBlocking: false,
+        color: NODE_COLORS.perplexityCard,
+      };
     case "digitalTwin":
-      return { name: "", mode: "collabora" as const, personality: "", lastResponse: "", status: "idle" as const, color: NODE_COLORS.digitalTwin };
+      return {
+        name: "",
+        mode: "collabora" as const,
+        personality: "",
+        lastResponse: "",
+        status: "idle" as const,
+        color: NODE_COLORS.digitalTwin,
+      };
     default:
       return {};
   }
@@ -68,7 +108,8 @@ function FlowCanvasInner() {
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
   const [isNewNode, setIsNewNode] = useState(false);
   const [hydrated, setHydrated] = useState(false);
-  const { zoomIn, zoomOut, fitView, screenToFlowPosition, getNode } = useReactFlow();
+  const { zoomIn, zoomOut, fitView, screenToFlowPosition, getNode } =
+    useReactFlow();
   const viewport = useViewport();
   const { save, exportJSON, importJSON } = useCanvasStorage();
 
@@ -116,16 +157,28 @@ function FlowCanvasInner() {
       digitalTwin: DigitalTwinNodeComponent_,
       synthesisOutput: SynthesisOutputNodeComponent_,
     }),
-    []
+    [],
   );
 
   const handleAddNode = useCallback(
-    (type: "text" | "conceptCard" | "imageUpload" | "run" | "goalCard" | "perplexityCard" | "digitalTwin") => {
+    (
+      type:
+        | "text"
+        | "conceptCard"
+        | "imageUpload"
+        | "run"
+        | "goalCard"
+        | "perplexityCard"
+        | "digitalTwin",
+    ) => {
       const center = screenToFlowPosition({
         x: window.innerWidth / 2,
         y: window.innerHeight / 2 - 100,
       });
-      const offset = { x: (Math.random() - 0.5) * 200, y: (Math.random() - 0.5) * 150 };
+      const offset = {
+        x: (Math.random() - 0.5) * 200,
+        y: (Math.random() - 0.5) * 150,
+      };
 
       const newNode: CanvasNode = {
         id: nextId(),
@@ -136,12 +189,10 @@ function FlowCanvasInner() {
 
       setNodes((nds) => [...nds, newNode]);
 
-      // Auto-open editor for new nodes (except run nodes which are non-editable)
-      if (type !== "run") {
-        requestAnimationFrame(() => openEditor(newNode.id, true));
-      }
+      // Auto-open editor for new nodes
+      requestAnimationFrame(() => openEditor(newNode.id, true));
     },
-    [screenToFlowPosition, setNodes, openEditor]
+    [screenToFlowPosition, setNodes, openEditor],
   );
 
   const chainFromRun = useCallback(
@@ -150,7 +201,8 @@ function FlowCanvasInner() {
       if (!runNode) return;
 
       const runData = runNode.data as unknown as RunNodeData;
-      const synthesis = runData.structuredOutput?.synthesis || runData.result || "";
+      const synthesis =
+        runData.structuredOutput?.synthesis || runData.result || "";
       if (!synthesis) return;
 
       const newNodeId = nextId();
@@ -172,7 +224,7 @@ function FlowCanvasInner() {
 
       setNodes((nds) => [...nds, newNode]);
     },
-    [getNode, setNodes]
+    [getNode, setNodes],
   );
 
   const handleLoadTemplate = useCallback(
@@ -180,7 +232,7 @@ function FlowCanvasInner() {
       setNodes(template.nodes);
       requestAnimationFrame(() => fitView({ padding: 0.2 }));
     },
-    [setNodes, fitView]
+    [setNodes, fitView],
   );
 
   const handleExport = useCallback(() => {
@@ -207,13 +259,20 @@ function FlowCanvasInner() {
         if (node.type === "text") {
           const d = node.data as unknown as TextNodeData;
           if (d.text) {
-            inputs.push({ nodeId: node.id, nodeType: "text", role: "context", content: d.text });
+            inputs.push({
+              nodeId: node.id,
+              nodeType: "text",
+              role: "context",
+              content: d.text,
+            });
           }
         } else if (node.type === "conceptCard") {
           const d = node.data as unknown as ConceptCardData;
           if (d.title || d.description) {
             inputs.push({
-              nodeId: node.id, nodeType: "conceptCard", role: "idea",
+              nodeId: node.id,
+              nodeType: "conceptCard",
+              role: "idea",
               content: `${d.title}: ${d.description}`,
               metadata: { tags: d.tags.join(", ") },
             });
@@ -221,13 +280,20 @@ function FlowCanvasInner() {
         } else if (node.type === "imageUpload") {
           const d = node.data as unknown as ImageUploadData;
           if (d.caption) {
-            inputs.push({ nodeId: node.id, nodeType: "imageUpload", role: "evidence", content: d.caption });
+            inputs.push({
+              nodeId: node.id,
+              nodeType: "imageUpload",
+              role: "evidence",
+              content: d.caption,
+            });
           }
         } else if (node.type === "goalCard") {
           const d = node.data as unknown as GoalCardData;
           if (d.title) {
             inputs.push({
-              nodeId: node.id, nodeType: "goalCard", role: "goal",
+              nodeId: node.id,
+              nodeType: "goalCard",
+              role: "goal",
               content: `${d.title} (success: ${d.successCriteria})`,
               metadata: { priority: d.priority, timeframe: d.timeframe },
             });
@@ -236,15 +302,22 @@ function FlowCanvasInner() {
           const d = node.data as unknown as PerplexityCardData;
           if (d.question) {
             inputs.push({
-              nodeId: node.id, nodeType: "perplexityCard", role: "question",
+              nodeId: node.id,
+              nodeType: "perplexityCard",
+              role: "question",
               content: d.question,
-              metadata: { isBlocking: String(d.isBlocking), ...(d.context ? { context: d.context } : {}) },
+              metadata: {
+                isBlocking: String(d.isBlocking),
+                ...(d.context ? { context: d.context } : {}),
+              },
             });
           }
         } else if (node.type === "digitalTwin") {
           const d = node.data as unknown as DigitalTwinData;
           inputs.push({
-            nodeId: node.id, nodeType: "digitalTwin", role: "perspective",
+            nodeId: node.id,
+            nodeType: "digitalTwin",
+            role: "perspective",
             content: `[${d.mode.toUpperCase()} - ${d.name || "Unnamed"}]`,
             metadata: { mode: d.mode, personality: d.personality },
           });
@@ -253,7 +326,7 @@ function FlowCanvasInner() {
 
       return inputs;
     },
-    [nodes]
+    [nodes],
   );
 
   const handleRunAI = useCallback(async () => {
@@ -267,18 +340,35 @@ function FlowCanvasInner() {
       if (inputs.length === 0) continue;
 
       // Set run node to running + twins to thinking
-      const twinNodeIds = inputs.filter((i) => i.nodeType === "digitalTwin").map((i) => i.nodeId);
+      const twinNodeIds = inputs
+        .filter((i) => i.nodeType === "digitalTwin")
+        .map((i) => i.nodeId);
 
       setNodes((nds) =>
         nds.map((n) => {
           if (n.id === runNode.id) {
-            return { ...n, data: { ...n.data, status: "running", result: "", structuredOutput: undefined } as RunNodeData } as CanvasNode;
+            return {
+              ...n,
+              data: {
+                ...n.data,
+                status: "running",
+                result: "",
+                structuredOutput: undefined,
+              } as RunNodeData,
+            } as CanvasNode;
           }
           if (twinNodeIds.includes(n.id)) {
-            return { ...n, data: { ...n.data, status: "thinking", lastResponse: "" } as DigitalTwinData } as CanvasNode;
+            return {
+              ...n,
+              data: {
+                ...n.data,
+                status: "thinking",
+                lastResponse: "",
+              } as DigitalTwinData,
+            } as CanvasNode;
           }
           return n;
-        })
+        }),
       );
 
       try {
@@ -298,26 +388,51 @@ function FlowCanvasInner() {
         setNodes((nds) =>
           nds.map((n) => {
             if (n.id === runNode.id) {
-              return { ...n, data: { ...n.data, status: "done", result, structuredOutput } as RunNodeData } as CanvasNode;
+              return {
+                ...n,
+                data: {
+                  ...n.data,
+                  status: "done",
+                  result,
+                  structuredOutput,
+                } as RunNodeData,
+              } as CanvasNode;
             }
             if (twinResponses[n.id]) {
-              return { ...n, data: { ...n.data, status: "done", lastResponse: twinResponses[n.id] } as DigitalTwinData } as CanvasNode;
+              return {
+                ...n,
+                data: {
+                  ...n.data,
+                  status: "done",
+                  lastResponse: twinResponses[n.id],
+                } as DigitalTwinData,
+              } as CanvasNode;
             }
             return n;
-          })
+          }),
         );
       } catch (err) {
         const message = err instanceof Error ? err.message : "Unknown error";
         setNodes((nds) =>
           nds.map((n) => {
             if (n.id === runNode.id) {
-              return { ...n, data: { ...n.data, status: "error", result: message } as RunNodeData } as CanvasNode;
+              return {
+                ...n,
+                data: {
+                  ...n.data,
+                  status: "error",
+                  result: message,
+                } as RunNodeData,
+              } as CanvasNode;
             }
             if (twinNodeIds.includes(n.id)) {
-              return { ...n, data: { ...n.data, status: "idle" } as DigitalTwinData } as CanvasNode;
+              return {
+                ...n,
+                data: { ...n.data, status: "idle" } as DigitalTwinData,
+              } as CanvasNode;
             }
             return n;
-          })
+          }),
         );
       }
     }
@@ -327,62 +442,70 @@ function FlowCanvasInner() {
 
   const nodeEditorValue = useMemo(
     () => ({ editingNodeId, isNewNode, openEditor, closeEditor }),
-    [editingNodeId, isNewNode, openEditor, closeEditor]
+    [editingNodeId, isNewNode, openEditor, closeEditor],
   );
 
-  const chainFlowValue = useMemo(
-    () => ({ chainFromRun }),
-    [chainFromRun]
-  );
+  const chainFlowValue = useMemo(() => ({ chainFromRun }), [chainFromRun]);
 
   return (
     <ChainFlowContext value={chainFlowValue}>
-    <NodeEditorContext value={nodeEditorValue}>
-      <div className="relative h-full w-full">
-        <ReactFlow
-          nodes={nodes}
-          edges={[]}
-          onNodesChange={onNodesChange}
-          nodeTypes={nodeTypes}
-          panOnDrag={activeTool === "hand" ? true : [1]}
-          selectionOnDrag={activeTool === "select"}
-          nodesConnectable={false}
-          snapToGrid
-          snapGrid={SNAP_GRID}
-          minZoom={0.3}
-          maxZoom={2}
-          fitView
-          fitViewOptions={{ padding: 0.2, includeHiddenNodes: true }}
-          proOptions={{ hideAttribution: true }}
-          deleteKeyCode={["Backspace", "Delete"]}
-          style={{
-            ["--xy-background-color" as string]: "var(--color-background)",
-          }}
-        >
-          <Background
-            variant={BackgroundVariant.Dots}
-            gap={16}
-            size={1}
-            color="#666"
+      <NodeEditorContext value={nodeEditorValue}>
+        <div className="relative h-full w-full">
+          <ReactFlow
+            nodes={nodes}
+            edges={[]}
+            onNodesChange={onNodesChange}
+            nodeTypes={nodeTypes}
+            panOnDrag={activeTool === "hand" ? true : [1]}
+            selectionOnDrag={activeTool === "select"}
+            nodesConnectable={false}
+            snapToGrid
+            snapGrid={SNAP_GRID}
+            minZoom={0.3}
+            maxZoom={2}
+            fitView
+            fitViewOptions={{ padding: 0.2, includeHiddenNodes: true }}
+            proOptions={{ hideAttribution: true }}
+            deleteKeyCode={["Backspace", "Delete"]}
+            style={{
+              ["--xy-background-color" as string]: "var(--color-background)",
+            }}
+          >
+            <Background
+              variant={BackgroundVariant.Dots}
+              gap={16}
+              size={1}
+              color="#666"
+            />
+            <DotGlowBackground />
+          </ReactFlow>
+
+          <AmbientGlow active={isRunning} />
+
+          {/* Overlays */}
+          <ColorFilterBar nodes={nodes} />
+          <CanvasToolbar
+            activeTool={activeTool}
+            onToolChange={setActiveTool}
+            onLoadTemplate={handleLoadTemplate}
+            onExport={handleExport}
+            onImport={handleImport}
+            hasContent={nodes.length > 0}
           />
-          <DotGlowBackground />
-        </ReactFlow>
-
-        <AmbientGlow active={isRunning} />
-
-        {/* Overlays */}
-        <ColorFilterBar nodes={nodes} />
-        <CanvasToolbar activeTool={activeTool} onToolChange={setActiveTool} onLoadTemplate={handleLoadTemplate} onExport={handleExport} onImport={handleImport} hasContent={nodes.length > 0} />
-        <PromptBar onAddNode={handleAddNode} onRunAI={handleRunAI} isRunning={isRunning} />
-        <StatusBar
-          zoom={viewport.zoom}
-          onZoomIn={() => zoomIn()}
-          onZoomOut={() => zoomOut()}
-          onFitView={() => fitView({ padding: 0.1 })}
-        />
-        <NodeEditDrawer />
-      </div>
-    </NodeEditorContext>
+          <PromptBar
+            onAddNode={handleAddNode}
+            onRunAI={handleRunAI}
+            isRunning={isRunning}
+          />
+          <StatusBar
+            zoom={viewport.zoom}
+            onZoomIn={() => zoomIn()}
+            onZoomOut={() => zoomOut()}
+            onFitView={() => fitView({ padding: 0.1 })}
+          />
+          <NodeEditDrawer />
+        </div>
+      </NodeEditorContext>
     </ChainFlowContext>
   );
 }

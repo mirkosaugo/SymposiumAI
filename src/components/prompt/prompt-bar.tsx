@@ -111,7 +111,7 @@ export function PromptBar({ onAddNode, onRunAI, isRunning }: PromptBarProps) {
                 <Sparkles className="h-5 w-5" />
               )}
             </TooltipTrigger>
-            <TooltipContent>Run AI</TooltipContent>
+            <TooltipContent>Generate</TooltipContent>
           </Tooltip>
         </div>
       </div>
