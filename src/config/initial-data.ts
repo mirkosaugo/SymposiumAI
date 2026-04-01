@@ -1,4 +1,5 @@
 import type { CanvasNode } from "@/types/canvas";
+import type { ColorLabels } from "@/hooks/use-canvas-storage";
 import { NODE_COLORS } from "./constants";
 
 // Column x-offsets (4 columns, ~480px apart)
@@ -195,3 +196,10 @@ export const initialNodes: CanvasNode[] = [
     },
   },
 ];
+
+export const initialColorLabels: ColorLabels = {
+  [NODE_COLORS.goalCard]: "Olympus",
+  [NODE_COLORS.conceptCard]: "Wisdom",
+  [NODE_COLORS.perplexityCard]: "War",
+  [NODE_COLORS.imageUpload]: "Diplomacy",
+};

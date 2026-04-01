@@ -23,9 +23,10 @@ import type {
   DigitalTwinData,
   NodeInput,
 } from "@/types/canvas";
-import { initialNodes } from "@/config/initial-data";
+import { initialNodes, initialColorLabels } from "@/config/initial-data";
 import { NODE_COLORS, SNAP_GRID } from "@/config/constants";
-import { loadNodes, useCanvasStorage } from "@/hooks/use-canvas-storage";
+import { loadCanvas, useCanvasStorage } from "@/hooks/use-canvas-storage";
+import type { ColorLabels } from "@/hooks/use-canvas-storage";
 import { NodeEditorContext } from "@/hooks/use-node-editor";
 import { NodeEditDrawer } from "./node-edit-drawer";
 import { TextNodeComponent_ } from "./text-node";
@@ -108,17 +109,19 @@ function FlowCanvasInner() {
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
   const [isNewNode, setIsNewNode] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+  const [colorLabels, setColorLabels] = useState<ColorLabels>(initialColorLabels);
   const { zoomIn, zoomOut, fitView, screenToFlowPosition, getNodes } = useReactFlow();
   const viewport = useViewport();
   const { save, exportJSON, importJSON } = useCanvasStorage();
 
   // Hydrate from localStorage after mount
   useEffect(() => {
-    const saved = loadNodes();
-    if (saved !== initialNodes) {
-      setNodes(saved);
+    const saved = loadCanvas();
+    if (saved.nodes !== initialNodes) {
+      setNodes(saved.nodes);
     }
-    for (const n of saved) {
+    setColorLabels(saved.colorLabels);
+    for (const n of saved.nodes) {
       const match = n.id.match(/^node-(\d+)$/);
       if (match) {
         const num = parseInt(match[1], 10);
@@ -131,8 +134,8 @@ function FlowCanvasInner() {
   // Auto-save on every node change (only after hydration)
   useEffect(() => {
     if (!hydrated) return;
-    save(nodes);
-  }, [nodes, save, hydrated]);
+    save(nodes, colorLabels);
+  }, [nodes, colorLabels, save, hydrated]);
 
   const openEditor = useCallback((nodeId: string, isNew = false) => {
     setEditingNodeId(nodeId);
@@ -357,7 +360,7 @@ function FlowCanvasInner() {
         <AmbientGlow active={isRunning} />
 
         {/* Overlays */}
-        <ColorFilterBar nodes={nodes} />
+        <ColorFilterBar nodes={nodes} colorLabels={colorLabels} onColorLabelChange={(hex, label) => setColorLabels((prev) => ({ ...prev, [hex]: label }))} />
         <CanvasToolbar
           activeTool={activeTool}
           onToolChange={setActiveTool}
