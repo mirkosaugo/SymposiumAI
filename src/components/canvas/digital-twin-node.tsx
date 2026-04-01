@@ -2,7 +2,7 @@
 
 import { memo, useState } from "react";
 import { type NodeProps } from "@xyflow/react";
-import { Bot, BrainCircuit } from "lucide-react";
+import { Bot, Sparkles } from "lucide-react";
 import type { DigitalTwinData } from "@/types/canvas";
 import { useNodeData } from "@/hooks/use-node-data";
 import { useCanvasActions } from "@/hooks/use-canvas-actions";
@@ -42,7 +42,7 @@ function DigitalTwinNodeComponent({ id, data, selected }: NodeProps) {
               className={ICON_BTN_CLASS}
               onClick={() => onThinkTwin(id)}
             >
-              <BrainCircuit className="h-3.5 w-3.5" />
+              <Sparkles className="h-3.5 w-3.5" />
             </TooltipTrigger>
             <TooltipContent side="right">Think</TooltipContent>
           </Tooltip>
