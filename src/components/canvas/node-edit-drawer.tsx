@@ -60,10 +60,10 @@ const PRIORITY_OPTIONS: { value: GoalCardData["priority"]; label: string; color:
 ];
 
 const TWIN_MODES: { id: DigitalTwinData["mode"]; label: string; color: string }[] = [
-  { id: "contraddici", label: "Challenge", color: "#FF6B9D" },
-  { id: "collabora", label: "Collaborate", color: "#34D399" },
-  { id: "analizza", label: "Analyze", color: "#FBBF24" },
-  { id: "provoca", label: "Provoke", color: "#A78BFA" },
+  { id: "contraddici", label: "Challenge", color: "#F9A8D4" },
+  { id: "collabora", label: "Collaborate", color: "#86EFAC" },
+  { id: "analizza", label: "Analyze", color: "#FDE68A" },
+  { id: "provoca", label: "Provoke", color: "#C4B5FD" },
 ];
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
@@ -371,7 +371,7 @@ function DigitalTwinForm({
               className="rounded-lg px-3 py-2 text-xs font-semibold transition-all"
               style={
                 data.mode === mode.id
-                  ? { background: mode.color, color: "#fff" }
+                  ? { background: mode.color, color: "#1a1a1a" }
                   : { background: `${mode.color}15`, color: mode.color }
               }
             >

@@ -30,7 +30,7 @@ export function DotGlowBackground() {
       if (idleTimer.current) clearTimeout(idleTimer.current);
       idleTimer.current = setTimeout(hideGlow, IDLE_TIMEOUT);
     },
-    [hideGlow]
+    [hideGlow],
   );
 
   const handleMouseLeave = useCallback(() => {
@@ -74,7 +74,7 @@ export function DotGlowBackground() {
         id="dot-glow-bg"
         variant={BackgroundVariant.Dots}
         gap={16}
-        size={2}
+        size={1.8}
         color="var(--dot-glow-color)"
       />
     </div>

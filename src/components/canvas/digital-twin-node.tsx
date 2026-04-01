@@ -11,10 +11,10 @@ import { NodeHeader } from "./node-header";
 import { NodeViewTrigger, NodeViewDialog } from "./node-view-dialog";
 
 const MODES = [
-  { id: "contraddici" as const, label: "Challenge", color: "#FF6B9D" },
-  { id: "collabora" as const, label: "Collaborate", color: "#34D399" },
-  { id: "analizza" as const, label: "Analyze", color: "#FBBF24" },
-  { id: "provoca" as const, label: "Provoke", color: "#A78BFA" },
+  { id: "contraddici" as const, label: "Challenge", color: "#F9A8D4" },
+  { id: "collabora" as const, label: "Collaborate", color: "#86EFAC" },
+  { id: "analizza" as const, label: "Analyze", color: "#FDE68A" },
+  { id: "provoca" as const, label: "Provoke", color: "#C4B5FD" },
 ] as const;
 
 function DigitalTwinNodeComponent({ id, data, selected }: NodeProps) {
@@ -45,7 +45,7 @@ function DigitalTwinNodeComponent({ id, data, selected }: NodeProps) {
         <div className="px-4 py-1.5">
           <span
             className="inline-block rounded-full px-2.5 py-1 text-[10px] font-semibold"
-            style={{ background: activeMode.color, color: "#fff" }}
+            style={{ background: activeMode.color, color: "#1a1a1a" }}
           >
             {activeMode.label}
           </span>
@@ -94,7 +94,7 @@ function DigitalTwinNodeComponent({ id, data, selected }: NodeProps) {
       <NodeViewDialog open={viewOpen} onOpenChange={setViewOpen} icon={Bot} label={nodeData.name || "Digital Twin"} color={nodeData.color}>
         <div className="flex items-center gap-2 mb-4">
           <span
-            className="rounded-full px-3 py-1 text-xs font-semibold text-white"
+            className="rounded-full px-3 py-1 text-xs font-semibold text-[#1a1a1a]"
             style={{ background: activeMode.color }}
           >
             {activeMode.label}
