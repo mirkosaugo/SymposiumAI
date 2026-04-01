@@ -106,7 +106,7 @@ export function Header() {
         </Tooltip>
 
         <Avatar className="h-9 w-9 border border-border/15 backdrop-blur-3xl shadow-[var(--glass-shadow)]">
-          <AvatarFallback className="text-xs bg-card">U</AvatarFallback>
+          <AvatarFallback className="text-xs bg-card">M</AvatarFallback>
         </Avatar>
       </div>
     </header>
