@@ -7,6 +7,10 @@
       "Bash(npm uninstall:*)",
       "Bash(npm install:*)",
       "Read(//private/tmp/**)"
+    ],
+    "deny": [
+      "Read(**/.env*)",
+      "Edit(**/.env*)"
     ]
   }
 }
