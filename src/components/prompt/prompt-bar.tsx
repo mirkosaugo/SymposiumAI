@@ -11,6 +11,7 @@ import {
   HelpCircle,
   Bot,
   Loader2,
+  MessageSquare,
 } from "lucide-react";
 import {
   Tooltip,
@@ -19,6 +20,27 @@ import {
 } from "@/components/ui/tooltip";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+
+function useGradientId(prefix: string, colors: string[]) {
+  const id = `${prefix}-${colors.join("-").replace(/#/g, "")}`;
+  return id;
+}
+
+function GradientDefs({ id, colors }: { id: string; colors: string[] }) {
+  if (colors.length === 0) return null;
+  return (
+    <svg width="0" height="0" className="absolute">
+      <defs>
+        <linearGradient id={id} x1="0%" y1="0%" x2="100%" y2="100%">
+          {colors.map((c, i) => (
+            <stop key={c} offset={`${(i / Math.max(colors.length - 1, 1)) * 100}%`} stopColor={c} />
+          ))}
+        </linearGradient>
+      </defs>
+    </svg>
+  );
+}
+
 interface PromptBarProps {
   onAddNode: (
     type:
@@ -31,8 +53,10 @@ interface PromptBarProps {
   ) => void;
   onSmartCreate: (prompt: string) => Promise<void>;
   onRunByColor: (color: string) => Promise<void>;
+  onDebate: (color: string) => Promise<void>;
   isRunning: boolean;
   availableColors: string[];
+  debateColors: string[];
 }
 
 const nodeActions = [
@@ -44,23 +68,30 @@ const nodeActions = [
   { type: "imageUpload" as const, icon: ImagePlus, label: "Image" },
 ];
 
-export function PromptBar({ onAddNode, onSmartCreate, onRunByColor, isRunning, availableColors }: PromptBarProps) {
+export function PromptBar({ onAddNode, onSmartCreate, onRunByColor, onDebate, isRunning, availableColors, debateColors }: PromptBarProps) {
+  const synthGradientId = useGradientId("synth", availableColors);
+  const debateGradientId = useGradientId("debate", debateColors);
   const [promptText, setPromptText] = useState("");
   const [isCreating, setIsCreating] = useState(false);
-  const [showColorMenu, setShowColorMenu] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const [showSynthesizeMenu, setShowSynthesizeMenu] = useState(false);
+  const [showDebateMenu, setShowDebateMenu] = useState(false);
+  const synthesizeRef = useRef<HTMLDivElement>(null);
+  const debateRef = useRef<HTMLDivElement>(null);
 
-  // Close menu on outside click
+  // Close menus on outside click
   useEffect(() => {
-    if (!showColorMenu) return;
+    if (!showSynthesizeMenu && !showDebateMenu) return;
     const handler = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setShowColorMenu(false);
+      if (showSynthesizeMenu && synthesizeRef.current && !synthesizeRef.current.contains(e.target as Node)) {
+        setShowSynthesizeMenu(false);
+      }
+      if (showDebateMenu && debateRef.current && !debateRef.current.contains(e.target as Node)) {
+        setShowDebateMenu(false);
       }
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
-  }, [showColorMenu]);
+  }, [showSynthesizeMenu, showDebateMenu]);
 
   const handleSubmit = useCallback(async () => {
     const text = promptText.trim();
@@ -77,12 +108,20 @@ export function PromptBar({ onAddNode, onSmartCreate, onRunByColor, isRunning, a
     }
   }, [promptText, isCreating, onSmartCreate]);
 
-  const handleColorRun = useCallback(
+  const handleSynthesize = useCallback(
     async (color: string) => {
-      setShowColorMenu(false);
+      setShowSynthesizeMenu(false);
       await onRunByColor(color);
     },
     [onRunByColor]
+  );
+
+  const handleDebate = useCallback(
+    async (color: string) => {
+      setShowDebateMenu(false);
+      await onDebate(color);
+    },
+    [onDebate]
   );
 
   return (
@@ -130,28 +169,28 @@ export function PromptBar({ onAddNode, onSmartCreate, onRunByColor, isRunning, a
 
           <Separator orientation="vertical" className="mx-1 h-6 opacity-20" />
 
-          {/* Generate by color */}
-          <div className="relative" ref={menuRef}>
+          {/* Synthesize by color */}
+          <div className="relative" ref={synthesizeRef}>
+            <GradientDefs id={synthGradientId} colors={availableColors} />
             <Tooltip>
               <TooltipTrigger
                 className={cn(
                   "flex h-8 w-8 items-center justify-center rounded-full transition-colors cursor-pointer active:scale-95",
-                  isRunning ? "text-amber-400" : "text-foreground hover:bg-muted",
+                  isRunning ? "text-amber-400" : "hover:bg-muted",
                 )}
-                onClick={() => !isRunning && setShowColorMenu((v) => !v)}
+                onClick={() => { if (!isRunning) { setShowSynthesizeMenu((v) => !v); setShowDebateMenu(false); } }}
                 disabled={isRunning}
               >
                 {isRunning ? (
                   <div className="h-5 w-5 rounded-full border-2 border-amber-400 border-t-transparent animate-spin" />
                 ) : (
-                  <Sparkles className="h-5 w-5" />
+                  <Sparkles className="h-5 w-5" style={availableColors.length > 0 ? { stroke: `url(#${synthGradientId})` } : undefined} />
                 )}
               </TooltipTrigger>
-              <TooltipContent>Generate</TooltipContent>
+              <TooltipContent>Synthesize</TooltipContent>
             </Tooltip>
 
-            {/* Color dropdown */}
-            {showColorMenu && (
+            {showSynthesizeMenu && (
               <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 rounded-full bg-[var(--glass-bg)] border border-[var(--glass-border)] backdrop-blur-2xl shadow-[var(--glass-shadow)] px-2.5 py-1.5">
                 {availableColors.length === 0 ? (
                   <span className="text-xs text-muted-foreground px-2 whitespace-nowrap">No cards on canvas</span>
@@ -160,12 +199,44 @@ export function PromptBar({ onAddNode, onSmartCreate, onRunByColor, isRunning, a
                     <button
                       key={color}
                       type="button"
-                      onClick={() => handleColorRun(color)}
+                      onClick={() => handleSynthesize(color)}
                       className="h-6 w-6 rounded-full cursor-pointer transition-transform hover:scale-125 active:scale-95"
                       style={{ backgroundColor: color }}
                     />
                   ))
                 )}
+              </div>
+            )}
+          </div>
+
+          {/* Debate by color */}
+          <div className="relative" ref={debateRef}>
+            <GradientDefs id={debateGradientId} colors={debateColors} />
+            <Tooltip>
+              <TooltipTrigger
+                className={cn(
+                  "flex h-8 w-8 items-center justify-center rounded-full transition-colors cursor-pointer active:scale-95",
+                  isRunning ? "text-amber-400" : debateColors.length === 0 ? "text-muted-foreground/30 cursor-not-allowed" : "hover:bg-muted",
+                )}
+                onClick={() => { if (!isRunning && debateColors.length > 0) { setShowDebateMenu((v) => !v); setShowSynthesizeMenu(false); } }}
+                disabled={isRunning || debateColors.length === 0}
+              >
+                <MessageSquare className="h-5 w-5" style={debateColors.length > 0 ? { stroke: `url(#${debateGradientId})` } : undefined} />
+              </TooltipTrigger>
+              <TooltipContent>{debateColors.length === 0 ? "Debate (needs 2+ twins of same color)" : "Debate"}</TooltipContent>
+            </Tooltip>
+
+            {showDebateMenu && (
+              <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 rounded-full bg-[var(--glass-bg)] border border-[var(--glass-border)] backdrop-blur-2xl shadow-[var(--glass-shadow)] px-2.5 py-1.5">
+                {debateColors.map((color) => (
+                  <button
+                    key={color}
+                    type="button"
+                    onClick={() => handleDebate(color)}
+                    className="h-6 w-6 rounded-full cursor-pointer transition-transform hover:scale-125 active:scale-95"
+                    style={{ backgroundColor: color }}
+                  />
+                ))}
               </div>
             )}
           </div>

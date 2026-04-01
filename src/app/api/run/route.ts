@@ -5,17 +5,6 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-const MODE_INSTRUCTIONS: Record<string, string> = {
-  contraddici:
-    "Challenge every assumption, find weaknesses, play devil's advocate. Be direct and provocative in your critiques.",
-  collabora:
-    "Expand on ideas, find unexpected connections, propose concrete developments. Be constructive and generative.",
-  analizza:
-    "Structured critical analysis: find logical gaps, highlight contradictions, assess feasibility. Be precise and methodical.",
-  provoca:
-    "Radical reframe: extreme hypotheses, uncomfortable questions, counterintuitive perspectives. Push thinking beyond limits.",
-};
-
 const SYSTEM_PROMPT = `You are a strategic facilitator. Your task is to synthesize a brainstorming board and produce structured, actionable output.
 
 ALWAYS respond in the following JSON format:
@@ -111,60 +100,12 @@ function buildSemanticPrompt(inputs: NodeInput[]): string {
 
   if (perspectives.length > 0) {
     sections.push(
-      "DIGITAL TWINS PERSPECTIVES:\n" +
-        "For each Digital Twin present, generate a response IN CHARACTER strictly following their mode.\n" +
-        perspectives
-          .map((p) => {
-            const mode = p.metadata?.mode || "collabora";
-            const instruction = MODE_INSTRUCTIONS[mode] || MODE_INSTRUCTIONS.collabora;
-            let line = `- ${p.content}: ${instruction}`;
-            if (p.metadata?.personality) line += ` Personality: ${p.metadata.personality}.`;
-            return line;
-          })
-          .join("\n")
-    );
-
-    sections.push(
-      "IMPORTANT: After the main JSON, generate a separate section for each Digital Twin.\n" +
-        "Format each twin response like this:\n" +
-        perspectives
-          .map(
-            (p) =>
-              `===TWIN:${p.nodeId}===\n[The in-character response from twin ${p.content}]\n===END_TWIN===`
-          )
-          .join("\n") +
-        "\nEach twin must respond IN CHARACTER to the board content, following their own mode."
+      "DIGITAL TWINS PRESENT (listed for awareness, they will respond separately):\n" +
+        perspectives.map((p) => `- ${p.content}`).join("\n")
     );
   }
 
   return sections.join("\n\n");
-}
-
-function parseTwinResponses(
-  text: string,
-  twinNodeIds: string[]
-): { mainResult: string; twinResponses: Record<string, string> } {
-  const twinResponses: Record<string, string> = {};
-  let mainResult = text;
-
-  for (const nodeId of twinNodeIds) {
-    const startTag = `===TWIN:${nodeId}===`;
-    const endTag = `===END_TWIN===`;
-    const startIdx = text.indexOf(startTag);
-    if (startIdx === -1) continue;
-
-    const contentStart = startIdx + startTag.length;
-    const endIdx = text.indexOf(endTag, contentStart);
-    if (endIdx === -1) continue;
-
-    twinResponses[nodeId] = text.slice(contentStart, endIdx).trim();
-    mainResult = mainResult.replace(
-      text.slice(startIdx, endIdx + endTag.length),
-      ""
-    );
-  }
-
-  return { mainResult: mainResult.trim(), twinResponses };
 }
 
 function parseStructuredOutput(text: string): { structured: StructuredOutput | null; raw: string } {
@@ -194,51 +135,32 @@ export async function POST(request: Request) {
     const { inputs } = (await request.json()) as { inputs: NodeInput[] };
 
     if (!inputs || !Array.isArray(inputs) || inputs.length === 0) {
-      return Response.json(
-        { error: "No input provided" },
-        { status: 400 }
-      );
+      return Response.json({ error: "No input provided" }, { status: 400 });
     }
 
-    const prompt = buildSemanticPrompt(inputs);
-    const twinNodeIds = inputs
-      .filter((i) => i.nodeType === "digitalTwin")
-      .map((i) => i.nodeId);
+    // Filter out twins — synthesis only uses non-twin content
+    const synthesisInputs = inputs.filter((i) => i.nodeType !== "digitalTwin");
+    const twinInputs = inputs.filter((i) => i.nodeType === "digitalTwin");
+
+    const prompt = buildSemanticPrompt([...synthesisInputs, ...twinInputs]);
 
     const message = await anthropic.messages.create({
       model: "claude-sonnet-4-20250514",
       max_tokens: 3000,
       system: SYSTEM_PROMPT,
-      messages: [
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
+      messages: [{ role: "user", content: prompt }],
     });
 
     const textBlock = message.content.find((b) => b.type === "text");
     const rawText = textBlock ? textBlock.text : "No result generated";
-
-    let mainText = rawText;
-    let twinResponses: Record<string, string> = {};
-
-    if (twinNodeIds.length > 0) {
-      const parsed = parseTwinResponses(rawText, twinNodeIds);
-      mainText = parsed.mainResult;
-      twinResponses = parsed.twinResponses;
-    }
-
-    const { structured, raw } = parseStructuredOutput(mainText);
+    const { structured, raw } = parseStructuredOutput(rawText);
 
     return Response.json({
       result: raw,
       structuredOutput: structured,
-      ...(Object.keys(twinResponses).length > 0 ? { twinResponses } : {}),
     });
   } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error";
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
     console.error("Run API error:", errorMessage);
     return Response.json({ error: errorMessage }, { status: 500 });
   }

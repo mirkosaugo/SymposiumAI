@@ -2,9 +2,8 @@ import type { CanvasNode } from "@/types/canvas";
 import type { ColorLabels } from "@/hooks/use-canvas-storage";
 import { NODE_COLORS } from "./constants";
 
-// Column x-offsets (4 columns, ~480px apart)
 const COL = { olympus: 0, wisdom: 500, war: 1000, diplomacy: 1500 };
-const ROW = { r0: 0, r1: 220, r2: 440, r3: 660 };
+const ROW = { r0: 0, r1: 220, r2: 440, r3: 660, r4: 880 };
 
 export const initialNodes: CanvasNode[] = [
   // ── Column 1 — Amber: The Grand Question ──────────────────────
@@ -32,13 +31,13 @@ export const initialNodes: CanvasNode[] = [
     },
   },
   {
-    id: "myth-titans",
-    type: "conceptCard",
+    id: "myth-perp-trust",
+    type: "perplexityCard",
     position: { x: COL.olympus, y: ROW.r2 },
     data: {
-      title: "The Titan's Return",
-      description: "Kronos stirs in Tartarus. Tremors shake the mortal world. Lesser Titans rally — Prometheus warns that time itself is fracturing. The old order seeks restoration.",
-      tags: ["threat", "kronos", "urgency"],
+      question: "Can the Olympians truly set aside their rivalries to face a common enemy?",
+      context: "Zeus and Poseidon have feuded for centuries. Ares acts unpredictably. Athena and Ares despise each other.",
+      isBlocking: true,
       color: NODE_COLORS.goalCard,
     },
   },
@@ -50,6 +49,19 @@ export const initialNodes: CanvasNode[] = [
       name: "Zeus",
       mode: "provoca" as const,
       personality: "King of the Gods. Speaks with thunderous authority and radical boldness. Pushes every idea to its most extreme consequence. Questions whether the old rules still apply. Prone to dramatic declarations.",
+      lastResponse: "",
+      status: "idle" as const,
+      color: NODE_COLORS.goalCard,
+    },
+  },
+  {
+    id: "myth-hera",
+    type: "digitalTwin",
+    position: { x: COL.olympus, y: ROW.r4 },
+    data: {
+      name: "Hera",
+      mode: "analizza" as const,
+      personality: "Queen of the Gods. Sees through deception and ego. Analyzes power dynamics with cold clarity. While others speak of glory, she asks: who benefits? Who pays the price? Fiercely protective of divine order.",
       lastResponse: "",
       status: "idle" as const,
       color: NODE_COLORS.goalCard,
@@ -149,6 +161,19 @@ export const initialNodes: CanvasNode[] = [
       color: NODE_COLORS.perplexityCard,
     },
   },
+  {
+    id: "myth-artemis",
+    type: "digitalTwin",
+    position: { x: COL.war, y: ROW.r4 },
+    data: {
+      name: "Artemis",
+      mode: "collabora" as const,
+      personality: "Goddess of the Hunt and Wilderness. Pragmatic, resourceful, independent. While Ares sees only brute force, she proposes guerrilla tactics, ambushes, strategic retreats. Builds on ideas by grounding them in nature and survival instinct.",
+      lastResponse: "",
+      status: "idle" as const,
+      color: NODE_COLORS.perplexityCard,
+    },
+  },
 
   // ── Column 4 — Cyan: Nature & Diplomacy ───────────────────────
   {
@@ -190,6 +215,19 @@ export const initialNodes: CanvasNode[] = [
       name: "Apollo",
       mode: "collabora" as const,
       personality: "God of Light, Music, and Prophecy. The eternal collaborator — builds on every idea, finds the harmony between opposing views. Speaks poetically. Sees connections others miss. Believes art and beauty are themselves forms of power.",
+      lastResponse: "",
+      status: "idle" as const,
+      color: NODE_COLORS.imageUpload,
+    },
+  },
+  {
+    id: "myth-dionysus",
+    type: "digitalTwin",
+    position: { x: COL.diplomacy, y: ROW.r4 },
+    data: {
+      name: "Dionysus",
+      mode: "provoca" as const,
+      personality: "God of Wine, Madness, and Ecstasy. Sees rationality as a cage. Challenges the very premise of diplomacy — what if chaos is the natural order? What if the Titans are right? Speaks in paradoxes, disrupts comfortable consensus.",
       lastResponse: "",
       status: "idle" as const,
       color: NODE_COLORS.imageUpload,
